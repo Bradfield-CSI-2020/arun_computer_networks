@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="4b2e1f42-677f-446a-bbb0-6b65a2a838dd" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/pcapture-the-file/cmd/parse.go" beforeDir="false" afterPath="$PROJECT_DIR$/pcapture-the-file/parse/parseheader.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pcapture-the-file/internal/common.go" beforeDir="false" afterPath="$PROJECT_DIR$/pcapture-the-file/internal/common.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pcapture-the-file/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/pcapture-the-file/main.go" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Go File" />
+      </list>
+    </option>
+  </component>
+  <component name="GOROOT" path="/usr/local/go" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GoLibraries">
+    <option name="indexEntireGoPath" value="false" />
+  </component>
+  <component name="ProjectId" id="1j2c0bnYi4pYHlsAFEB1KhE9Xu1" />
+  <component name="ProjectViewState">
+    <option name="autoscrollToSource" value="true" />
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="DefaultGoTemplateProperty" value="Go File" />
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="go.import.settings.migrated" value="true" />
+    <property name="go.sdk.automatically.set" value="true" />
+    <property name="go.tried.to.enable.integration.vgo.integrator" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.path.for.package.eslint" value="project" />
+    <property name="node.js.path.for.package.tslint" value="project" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
+    <property name="settings.editor.selected.configurable" value="preferences.keymap" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/pcapture-the-file/cmd" />
+      <recent name="$PROJECT_DIR$/pcapture-the-file" />
+    </key>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VgoProject">
+    <integration-enabled>true</integration-enabled>
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="609" y="540" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1603010200992">
+      <screen x="0" y="23" width="3440" height="1417" />
+    </state>
+    <state x="609" y="540" key="#com.intellij.fileTypes.FileTypeChooser/0.23.3440.1417@0.23.3440.1417" timestamp="1603010200992" />
+    <state x="1229" y="370" key="SettingsEditor" timestamp="1603014194464">
+      <screen x="0" y="23" width="3440" height="1417" />
+    </state>
+    <state x="1229" y="370" key="SettingsEditor/0.23.3440.1417@0.23.3440.1417" timestamp="1603014194464" />
+    <state x="2245" y="348" width="670" height="676" key="search.everywhere.popup" timestamp="1603005758738">
+      <screen x="0" y="23" width="3440" height="1417" />
+    </state>
+    <state x="2245" y="348" width="670" height="676" key="search.everywhere.popup/0.23.3440.1417@0.23.3440.1417" timestamp="1603005758738" />
+  </component>
+</project>

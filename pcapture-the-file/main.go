@@ -1,9 +1,10 @@
 package main
 
 import (
-	"computer_networks/cmd"
+	"computer_networks/parse"
 )
 
 func main() {
-	cmd.PcapHeader()
+	parse.PcapHeader()
 }
+
