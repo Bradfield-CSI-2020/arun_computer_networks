@@ -3,7 +3,6 @@ package parse
 import (
 	"computer_networks/internal"
 	"encoding/binary"
-	"fmt"
 	"io/ioutil"
 	"log"
 )
@@ -21,23 +20,14 @@ func init() {
 
 	Data = fileBytes
 
-	magicRaw := Data[0:4]
-
-	magicNumber := internal.Parse4ByteValue(magicRaw, binary.LittleEndian)
-
-
-	// TODO: why does this return a different endianness?
-	// rep := hex.EncodeToString(magicNumberBytes)
-	// fmt.Printf("hex: %s\n", rep)
+	magicNumber := internal.Parse4ByteValue(fileBytes[0:4], binary.LittleEndian)
 
 	// TODO: what to do about this:
 	// with the two nibbles of the two lower-order bytes of the magic number swapped
 	if magicNumber == 0xa1b2c3d4 {
 		HostByteOrder = binary.LittleEndian
-		fmt.Println("host byte order: LittleEndian")
 	} else if magicNumber == 0xd4c3b2a1 {
 		HostByteOrder = binary.BigEndian
-		fmt.Println("host byte order: BigEndian")
 	} else {
 		log.Fatalf("unknown byte order found: %x", magicNumber)
 	}
@@ -60,66 +50,63 @@ type PcapPacketHeader struct {
 	FullPacketLength uint32
 }
 
-func PacketHeader() {
+func PacketHeader() PcapPacketHeader {
 
 	var header PcapPacketHeader
 
-	raw := Data[24:28]
+	timestampData := Data[24:28]
+	timestampNanoData := Data[28:32]
+	packetLengthData := Data[32:36]
+	fullPacketLengthData := Data[36:40]
 
-	header.TimestampSeconds = internal.Parse4ByteValue(raw, HostByteOrder)
+	header.TimestampSeconds = internal.Parse4ByteValue(timestampData, HostByteOrder)
+	header.TimestampMicroSeconds = internal.Parse4ByteValue(timestampNanoData, HostByteOrder)
+	header.PacketLength = internal.Parse4ByteValue(packetLengthData, HostByteOrder)
+	header.FullPacketLength = internal.Parse4ByteValue(fullPacketLengthData, HostByteOrder)
 
-	fmt.Printf("timestamp seconds: %d\n", header.TimestampSeconds)
-
+	return header
 }
 
-func PcapHeader() {
+func PcapHeader() PCapFileHeader {
 	var header PCapFileHeader
-	x, y := parseVersion()
+	x, y := parseVersion(Data)
 
 	header.MajorVersion = x
 	header.MinorVersion = y
-	header.TimestampOffset = parseTimeStampOffset()
-	header.TimestampAccuracy = parseTimeStampAccuracy()
-	header.SnapShotLength = parseSnapShotLength()
-	header.LinkLayerHeaderType = parseLinkLayerHeaderType()
+	header.TimestampOffset = parseTimeStampOffset(Data)
+	header.TimestampAccuracy = parseTimeStampAccuracy(Data)
+	header.SnapShotLength = parseSnapShotLength(Data)
+	header.LinkLayerHeaderType = parseLinkLayerHeaderType(Data)
 
-	fmt.Printf("version: %d.%d\n", header.MajorVersion, header.MinorVersion)
-	fmt.Printf("timestamp offset: %d\n", header.TimestampOffset)
-	fmt.Printf("timestamp accuracy: %d\n", header.TimestampAccuracy)
-	fmt.Printf("snapshot length: %d\n", header.SnapShotLength)
-	fmt.Printf("linke layer header type: %d\n", header.LinkLayerHeaderType)
+	return header
 }
 
-func parseVersion() (x uint16, y uint16) {
-	majorVersionRaw := Data[4:6]
+func parseVersion(pCapHeader [] byte) (x uint16, y uint16) {
+	majorVersionRaw := pCapHeader[4:6]
 	x = internal.Parse2ByteValue(majorVersionRaw, HostByteOrder)
 
-	minorVersionRaw := []byte{Data[6], Data[7]}
+	minorVersionRaw := pCapHeader[6:8]
 	y = internal.Parse2ByteValue(minorVersionRaw, HostByteOrder)
 
 	return x,y
 }
 
-func parseTimeStampOffset() uint32{
-	//raw := []byte{Data[8], Data[9], Data[10], Data[11]}
-	raw := Data[8:12]
+func parseTimeStampOffset(pCapHeader [] byte) uint32{
+	raw := pCapHeader[8:12]
 	return internal.Parse4ByteValue(raw, HostByteOrder)
 }
 
-func parseTimeStampAccuracy() uint32 {
-	//timeZoneOffsetRaw := []byte{Data[12], Data[13], Data[14], Data[15]}
-	timeZoneOffsetRaw := Data[12:16]
+func parseTimeStampAccuracy(pCapHeader [] byte) uint32 {
+	timeZoneOffsetRaw := pCapHeader[12:16]
 	return internal.Parse4ByteValue(timeZoneOffsetRaw, HostByteOrder)
 }
 
-func parseSnapShotLength() uint32 {
-	//timeZoneOffsetRaw := []byte{Data[16], Data[17], Data[18], Data[19]}
-	timeZoneOffsetRaw := Data[16:20]
+func parseSnapShotLength(pCapHeader [] byte) uint32 {
+	timeZoneOffsetRaw := pCapHeader[16:20]
 	return internal.Parse4ByteValue(timeZoneOffsetRaw, HostByteOrder)
 }
 
-func parseLinkLayerHeaderType() uint32 {
-	//timeZoneOffsetRaw := []byte{Data[20], Data[21], Data[22], Data[23]}
-	timeZoneOffsetRaw := Data[20:24]
+func parseLinkLayerHeaderType(pCapHeader [] byte) uint32 {
+	timeZoneOffsetRaw := pCapHeader[20:24]
 	return internal.Parse4ByteValue(timeZoneOffsetRaw, HostByteOrder)
 }
