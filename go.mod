@@ -1,3 +1,3 @@
-module arun_computer_networks
+module computer_networks
 
 go 1.15
