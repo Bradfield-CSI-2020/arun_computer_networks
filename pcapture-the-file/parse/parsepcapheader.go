@@ -21,7 +21,10 @@ func init() {
 
 	Data = fileBytes
 
-	magicNumber := internal.Parse4ByteValue([]byte{fileBytes[0], fileBytes[1], fileBytes[2], fileBytes[3]}, binary.LittleEndian)
+	magicRaw := Data[0:4]
+
+	magicNumber := internal.Parse4ByteValue(magicRaw, binary.LittleEndian)
+
 
 	// TODO: why does this return a different endianness?
 	// rep := hex.EncodeToString(magicNumberBytes)
@@ -50,6 +53,25 @@ type PCapFileHeader struct {
 	LinkLayerHeaderType uint32
 }
 
+type PcapPacketHeader struct {
+	TimestampSeconds uint32
+	TimestampMicroSeconds  uint32
+	PacketLength uint32
+	FullPacketLength uint32
+}
+
+func PacketHeader() {
+
+	var header PcapPacketHeader
+
+	raw := Data[24:28]
+
+	header.TimestampSeconds = internal.Parse4ByteValue(raw, HostByteOrder)
+
+	fmt.Printf("timestamp seconds: %d\n", header.TimestampSeconds)
+
+}
+
 func PcapHeader() {
 	var header PCapFileHeader
 	x, y := parseVersion()
@@ -69,7 +91,7 @@ func PcapHeader() {
 }
 
 func parseVersion() (x uint16, y uint16) {
-	majorVersionRaw := []byte{Data[4], Data[5]}
+	majorVersionRaw := Data[4:6]
 	x = internal.Parse2ByteValue(majorVersionRaw, HostByteOrder)
 
 	minorVersionRaw := []byte{Data[6], Data[7]}
@@ -79,21 +101,25 @@ func parseVersion() (x uint16, y uint16) {
 }
 
 func parseTimeStampOffset() uint32{
-	raw := []byte{Data[8], Data[9], Data[10], Data[11]}
+	//raw := []byte{Data[8], Data[9], Data[10], Data[11]}
+	raw := Data[8:12]
 	return internal.Parse4ByteValue(raw, HostByteOrder)
 }
 
 func parseTimeStampAccuracy() uint32 {
-	timeZoneOffsetRaw := []byte{Data[12], Data[13], Data[14], Data[15]}
+	//timeZoneOffsetRaw := []byte{Data[12], Data[13], Data[14], Data[15]}
+	timeZoneOffsetRaw := Data[12:16]
 	return internal.Parse4ByteValue(timeZoneOffsetRaw, HostByteOrder)
 }
 
 func parseSnapShotLength() uint32 {
-	timeZoneOffsetRaw := []byte{Data[16], Data[17], Data[18], Data[19]}
+	//timeZoneOffsetRaw := []byte{Data[16], Data[17], Data[18], Data[19]}
+	timeZoneOffsetRaw := Data[16:20]
 	return internal.Parse4ByteValue(timeZoneOffsetRaw, HostByteOrder)
 }
 
 func parseLinkLayerHeaderType() uint32 {
-	timeZoneOffsetRaw := []byte{Data[20], Data[21], Data[22], Data[23]}
+	//timeZoneOffsetRaw := []byte{Data[20], Data[21], Data[22], Data[23]}
+	timeZoneOffsetRaw := Data[20:24]
 	return internal.Parse4ByteValue(timeZoneOffsetRaw, HostByteOrder)
 }

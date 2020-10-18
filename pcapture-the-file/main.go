@@ -6,5 +6,6 @@ import (
 
 func main() {
 	parse.PcapHeader()
+	parse.PacketHeader()
 }
 
