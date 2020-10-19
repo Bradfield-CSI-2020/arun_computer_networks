@@ -24,7 +24,6 @@ func init() {
 
 	fmt.Printf("file size is %d bytes\n", len(Data))
 
-	RawPacketData = fileBytes[24:]
 	magicNumber := internal.Parse4ByteValue(fileBytes[0:4], binary.LittleEndian)
 
 	// TODO: what to do about this:
@@ -36,6 +35,10 @@ func init() {
 	} else {
 		log.Fatalf("unknown byte order found: %x", magicNumber)
 	}
+
+	RawPacketData = fileBytes[24:]
+
+	fmt.Printf("packet data size is %d bytes\n", len(RawPacketData))
 }
 
 type PCapFileHeader struct {
@@ -63,11 +66,7 @@ func GetPacketData() {
 	startIndex := 0
 	count := 0
 
-	packetDataSize := uint32(len(RawPacketData))
-
-	var i uint32
-
-	for i = 0; i < packetDataSize; {
+	for  startIndex < len(RawPacketData) {
 		headerData := RawPacketData[startIndex:startIndex+16]
 
 		parsedData := PacketHeader(headerData)
@@ -77,11 +76,11 @@ func GetPacketData() {
 			fmt.Printf("full packet length: %d\n", parsedData.FullPacketLength)
 		}
 
-		if parsedData.PacketLength != parsedData.FullPacketLength {
+		if parsedData.PacketLength != parsedData.PacketLength {
 			log.Fatalf("packet length mismatch")
 		}
 
-		i = i + parsedData.PacketLength + 16
+		startIndex = startIndex + int(parsedData.PacketLength) + 16
 		count = count + 1
 
 	}
