@@ -71,11 +71,24 @@ func main() {
 		}
 
 		packetData.RawData = rawPacketData
+		packetData.EtherNetFrame = parse.ReadEtherNetHeaders(rawPacketData)
+
+		//fmt.Printf("DestinationMac size: %d\n", len(packetData.EtherNetFrameRaw.DestinationMac))
+		//fmt.Printf("SourceMac size: %d\n", len(packetData.EtherNetFrameRaw.SourceMac))
+		//fmt.Printf("EtherType size: %d\n", len(packetData.EtherNetFrameRaw.EtherType))
+		//fmt.Printf("Payload size: %d\n", len(packetData.EtherNetFrameRaw.Payload))
+		//fmt.Printf("InterPacketGap size: %d\n", len(packetData.EtherNetFrameRaw.InterPacketGap))
 
 		if myFile.PacketDataData == nil {
 			myFile.PacketDataData = []parse.PacketData{packetData}
 		} else {
 			myFile.PacketDataData = append(myFile.PacketDataData, packetData)
+		}
+
+		totalSize := len(packetData.EtherNetFrame.DestinationMac) + len(packetData.EtherNetFrame.SourceMac) + len(packetData.EtherNetFrame.EtherType) + len(packetData.EtherNetFrame.Payload) + len(packetData.EtherNetFrame.InterPacketGap)
+
+		if totalSize != len(packetData.RawData) {
+			log.Fatalln("ethernet frame size mismatch")
 		}
 
 		//fmt.Printf("timestamp seconds: %d\n", packetHeader.TimestampSeconds)
@@ -84,11 +97,12 @@ func main() {
 		//fmt.Printf("full packet length: %d\n", packetHeader.FullPacketLength)
 	}
 
-	if len(myFile.PacketDataData) != 99 {
-		log.Fatalln("total packet count mismatch")
-	}
-
 	//fmt.Printf("total packet data count: %d\n", len(myFile.PacketDataData))
+
+
+
+
+
 
 }
 

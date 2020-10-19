@@ -22,8 +22,9 @@ type PCapFileHeader struct {
 }
 
 type PacketData struct {
-	PacketHeader PcapPacketHeader
-	RawData []byte
+	PacketHeader  PcapPacketHeader
+	RawData       []byte
+	EtherNetFrame EtherNetFrameRaw
 }
 
 type PcapPacketHeader struct {
@@ -32,6 +33,28 @@ type PcapPacketHeader struct {
 	PacketLength uint32
 	FullPacketLength uint32
 }
+
+type EtherNetFrameRaw struct {
+	DestinationMac []byte
+	SourceMac []byte
+	EtherType []byte
+	Payload []byte
+	InterPacketGap []byte
+}
+
+func ReadEtherNetHeaders(raw [] byte) EtherNetFrameRaw {
+
+	var etherNetFrame EtherNetFrameRaw
+
+	etherNetFrame.DestinationMac = raw[0:6]
+	etherNetFrame.SourceMac = raw[6:12]
+	etherNetFrame.EtherType = raw[12:14]
+	etherNetFrame.Payload = raw[14:len(raw) - 12]
+	etherNetFrame.InterPacketGap = raw[len(raw) - 12:]
+
+	return etherNetFrame
+}
+
 
 func ReadPacketHeader(raw []byte) PcapPacketHeader {
 	var header PcapPacketHeader
