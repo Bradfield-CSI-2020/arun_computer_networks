@@ -2,7 +2,6 @@ package main
 
 import (
 	"computer_networks/parse"
-	"fmt"
 	"log"
 	"os"
 )
@@ -32,15 +31,14 @@ func main() {
 
 	myFile.PCapHeader = globalHeader
 
-	fmt.Printf("version: %d.%d\n", globalHeader.MajorVersion, globalHeader.MinorVersion)
-	fmt.Printf("timestamp offset: %d\n", globalHeader.TimestampOffset)
-	fmt.Printf("timestamp accuracy: %d\n", globalHeader.TimestampAccuracy)
-	fmt.Printf("snapshot length: %d\n", globalHeader.SnapShotLength)
-	fmt.Printf("linke layer globalHeader type: %d\n", globalHeader.LinkLayerHeaderType)
+	//fmt.Printf("version: %d.%d\n", globalHeader.MajorVersion, globalHeader.MinorVersion)
+	//fmt.Printf("timestamp offset: %d\n", globalHeader.TimestampOffset)
+	//fmt.Printf("timestamp accuracy: %d\n", globalHeader.TimestampAccuracy)
+	//fmt.Printf("snapshot length: %d\n", globalHeader.SnapShotLength)
+	//fmt.Printf("link layer globalHeader type: %d\n", globalHeader.LinkLayerHeaderType)
 
 
 	bytesRead := -1
-	count := 0
 
 	for bytesRead != 0 {
 		var rawPacketHeader = make([]byte,16)
@@ -53,13 +51,16 @@ func main() {
 			break
 		}
 
-		count = count + 1
 		bytesRead = read
 		packetHeader := parse.ReadPacketHeader(rawPacketHeader)
+
+		var packetData parse.PacketData
 
 		if packetHeader.PacketLength != packetHeader.FullPacketLength {
 			log.Fatalf("packet legth mismatch %v\n", pageErr)
 		}
+
+		packetData.PacketHeader = packetHeader
 
 		var rawPacketData = make([]byte,packetHeader.PacketLength)
 
@@ -69,13 +70,25 @@ func main() {
 			log.Fatalf("packet page error %v\n", pageErr)
 		}
 
+		packetData.RawData = rawPacketData
+
+		if myFile.PacketDataData == nil {
+			myFile.PacketDataData = []parse.PacketData{packetData}
+		} else {
+			myFile.PacketDataData = append(myFile.PacketDataData, packetData)
+		}
+
 		//fmt.Printf("timestamp seconds: %d\n", packetHeader.TimestampSeconds)
 		//fmt.Printf("timestamp micro: %d\n", packetHeader.TimestampMicroSeconds)
 		//fmt.Printf("packet length: %d\n", packetHeader.PacketLength)
 		//fmt.Printf("full packet length: %d\n", packetHeader.FullPacketLength)
 	}
 
-	fmt.Printf("packet count: %d\n", count)
+	if len(myFile.PacketDataData) != 99 {
+		log.Fatalln("total packet count mismatch")
+	}
+
+	//fmt.Printf("total packet data count: %d\n", len(myFile.PacketDataData))
 
 }
 
