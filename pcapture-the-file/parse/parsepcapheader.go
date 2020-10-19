@@ -3,12 +3,14 @@ package parse
 import (
 	"computer_networks/internal"
 	"encoding/binary"
+	"fmt"
 	"io/ioutil"
 	"log"
 )
 
 var Data []byte
 var HostByteOrder binary.ByteOrder
+var RawPacketData []byte
 
 func init() {
 
@@ -20,6 +22,9 @@ func init() {
 
 	Data = fileBytes
 
+	fmt.Printf("file size is %d bytes\n", len(Data))
+
+	RawPacketData = fileBytes[24:]
 	magicNumber := internal.Parse4ByteValue(fileBytes[0:4], binary.LittleEndian)
 
 	// TODO: what to do about this:
@@ -31,7 +36,6 @@ func init() {
 	} else {
 		log.Fatalf("unknown byte order found: %x", magicNumber)
 	}
-
 }
 
 type PCapFileHeader struct {
@@ -50,14 +54,48 @@ type PcapPacketHeader struct {
 	FullPacketLength uint32
 }
 
-func PacketHeader() PcapPacketHeader {
+type PacketData struct {
 
+}
+
+func GetPacketData() {
+
+	startIndex := 0
+	count := 0
+
+	packetDataSize := uint32(len(RawPacketData))
+
+	var i uint32
+
+	for i = 0; i < packetDataSize; {
+		headerData := RawPacketData[startIndex:startIndex+16]
+
+		parsedData := PacketHeader(headerData)
+
+		if parsedData.PacketLength != 78 {
+			fmt.Printf("packet length: %d\n", parsedData.PacketLength)
+			fmt.Printf("full packet length: %d\n", parsedData.FullPacketLength)
+		}
+
+		if parsedData.PacketLength != parsedData.FullPacketLength {
+			log.Fatalf("packet length mismatch")
+		}
+
+		i = i + parsedData.PacketLength + 16
+		count = count + 1
+
+	}
+
+	fmt.Printf("count: %d\n", count)
+}
+
+func PacketHeader(raw []byte) PcapPacketHeader {
 	var header PcapPacketHeader
 
-	timestampData := Data[24:28]
-	timestampNanoData := Data[28:32]
-	packetLengthData := Data[32:36]
-	fullPacketLengthData := Data[36:40]
+	timestampData := raw[0:4]
+	timestampNanoData := raw[4:8]
+	packetLengthData := raw[8:12]
+	fullPacketLengthData := raw[12:16]
 
 	header.TimestampSeconds = internal.Parse4ByteValue(timestampData, HostByteOrder)
 	header.TimestampMicroSeconds = internal.Parse4ByteValue(timestampNanoData, HostByteOrder)

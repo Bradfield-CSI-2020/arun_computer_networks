@@ -15,11 +15,12 @@ func main() {
 	fmt.Printf("snapshot length: %d\n", header.SnapShotLength)
 	fmt.Printf("linke layer header type: %d\n", header.LinkLayerHeaderType)
 
-	packetHeader := parse.PacketHeader()
+	parse.GetPacketData()
 
-	fmt.Printf("timestamp seconds: %d\n", packetHeader.TimestampSeconds)
-	fmt.Printf("timestamp micro: %d\n", packetHeader.TimestampMicroSeconds)
-	fmt.Printf("packet length: %d\n", packetHeader.PacketLength)
-	fmt.Printf("full packet length: %d\n", packetHeader.FullPacketLength)
+	//fmt.Printf("timestamp seconds: %d\n", packetHeader.TimestampSeconds)
+	//fmt.Printf("timestamp micro: %d\n", packetHeader.TimestampMicroSeconds)
+	//fmt.Printf("packet length: %d\n", packetHeader.PacketLength)
+	//fmt.Printf("full packet length: %d\n", packetHeader.FullPacketLength)
 }
+
 
