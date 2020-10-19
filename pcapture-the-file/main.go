@@ -2,12 +2,10 @@ package main
 
 import (
 	"computer_networks/parse"
+	"fmt"
 	"log"
 	"os"
 )
-
-
-
 
 func main() {
 
@@ -19,7 +17,7 @@ func main() {
 		log.Fatalf("parse:readError %v\n", fileOpenErr)
 	}
 
-	var rawPCapHeader = make([]byte,24)
+	var rawPCapHeader = make([]byte, 24)
 
 	_, pageErr := file.Read(rawPCapHeader)
 
@@ -37,11 +35,10 @@ func main() {
 	//fmt.Printf("snapshot length: %d\n", globalHeader.SnapShotLength)
 	//fmt.Printf("link layer globalHeader type: %d\n", globalHeader.LinkLayerHeaderType)
 
-
 	bytesRead := -1
 
 	for bytesRead != 0 {
-		var rawPacketHeader = make([]byte,16)
+		var rawPacketHeader = make([]byte, 16)
 		read, pageErr := file.Read(rawPacketHeader)
 
 		if pageErr != nil {
@@ -62,7 +59,7 @@ func main() {
 
 		packetData.PacketHeader = packetHeader
 
-		var rawPacketData = make([]byte,packetHeader.PacketLength)
+		var rawPacketData = make([]byte, packetHeader.PacketLength)
 
 		_, packetReadErr := file.Read(rawPacketData)
 
@@ -73,10 +70,49 @@ func main() {
 		packetData.RawData = rawPacketData
 		packetData.EtherNetFrame = parse.ReadEtherNetHeaders(rawPacketData)
 
+		ipHeader := parse.ReadIpHeader(packetData.EtherNetFrame.IpRawPayload)
+
+		var ipDataGram parse.IpDataGram
+
+		rawData := packetData.EtherNetFrame.IpRawPayload[ipHeader.InternetHeaderLength:]
+
+		ipDataGram.IpHeader = ipHeader
+		ipDataGram.RawData = rawData
+
+		if myFile.IpDataGramData == nil {
+			myFile.IpDataGramData = []parse.IpDataGram{ipDataGram}
+		} else {
+			myFile.IpDataGramData = append(myFile.IpDataGramData, ipDataGram)
+		}
+
+		fmt.Println("")
+		fmt.Printf("InternetHeaderLength: %d\n", ipHeader.InternetHeaderLength)
+		fmt.Printf("Data Length %d\n", len(rawData))
+		fmt.Printf("TotalLength: %d\n", ipHeader.TotalLength)
+
+		fmt.Printf("ECN: %d\n", ipHeader.ECN)
+		fmt.Printf("Protocol: %d\n", ipHeader.Protocol)
+		fmt.Printf("SourceIp: %d\n", ipHeader.SourceIp)
+		fmt.Printf("DestinationIp: %d\n", ipHeader.DestinationIp)
+		fmt.Println("")
+
+		// TODO: what is the proper way to decode mac addresses?
+		//fmt.Printf("DestinationMac address: %s\n", hex.EncodeToString(packetData.EtherNetFrame.DestinationMac))
+		//fmt.Printf("SourceMac address: %s\n", hex.EncodeToString(packetData.EtherNetFrame.SourceMac))
+
+		// TODO: looks like requests ans responses have the mac addresses swapped
+		//if "c4e984876028" != hex.EncodeToString(packetData.EtherNetFrame.DestinationMac) {
+		//	log.Fatalln("DestinationMac address mismatch !")
+		//}
+		//
+		//if "a45e60df2e1b" != hex.EncodeToString(packetData.EtherNetFrame.SourceMac) {
+		//	log.Fatalln("SourceMac address mismatch !")
+		//}
+
 		//fmt.Printf("DestinationMac size: %d\n", len(packetData.EtherNetFrameRaw.DestinationMac))
 		//fmt.Printf("SourceMac size: %d\n", len(packetData.EtherNetFrameRaw.SourceMac))
 		//fmt.Printf("EtherType size: %d\n", len(packetData.EtherNetFrameRaw.EtherType))
-		//fmt.Printf("Payload size: %d\n", len(packetData.EtherNetFrameRaw.Payload))
+		//fmt.Printf("IpRawPayload size: %d\n", len(packetData.EtherNetFrameRaw.IpRawPayload))
 		//fmt.Printf("InterPacketGap size: %d\n", len(packetData.EtherNetFrameRaw.InterPacketGap))
 
 		if myFile.PacketDataData == nil {
@@ -85,7 +121,7 @@ func main() {
 			myFile.PacketDataData = append(myFile.PacketDataData, packetData)
 		}
 
-		totalSize := len(packetData.EtherNetFrame.DestinationMac) + len(packetData.EtherNetFrame.SourceMac) + len(packetData.EtherNetFrame.EtherType) + len(packetData.EtherNetFrame.Payload) + len(packetData.EtherNetFrame.InterPacketGap)
+		totalSize := len(packetData.EtherNetFrame.DestinationMac) + len(packetData.EtherNetFrame.SourceMac) + len(packetData.EtherNetFrame.EtherType) + len(packetData.EtherNetFrame.IpRawPayload) + len(packetData.EtherNetFrame.InterPacketGap)
 
 		if totalSize != len(packetData.RawData) {
 			log.Fatalln("ethernet frame size mismatch")
@@ -99,11 +135,4 @@ func main() {
 
 	//fmt.Printf("total packet data count: %d\n", len(myFile.PacketDataData))
 
-
-
-
-
-
 }
-
-
