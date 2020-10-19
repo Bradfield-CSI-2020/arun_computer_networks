@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func Parse4ByteValue(raw []byte, byteOrder binary.ByteOrder) uint32 {
+func Parse4ByteValue(raw []byte) uint32 {
 
 
 	if len(raw) != 4 {
@@ -17,7 +17,7 @@ func Parse4ByteValue(raw []byte, byteOrder binary.ByteOrder) uint32 {
 
 	var container uint32
 
-	err := binary.Read(buffer, byteOrder, &container)
+	err := binary.Read(buffer, binary.LittleEndian, &container)
 
 	if err != nil {
 		log.Fatalf("parse:Parse4ByteValue %v\n", err)
@@ -26,7 +26,7 @@ func Parse4ByteValue(raw []byte, byteOrder binary.ByteOrder) uint32 {
 	return container
 }
 
-func Parse2ByteValue(raw []byte, byteOrder binary.ByteOrder) uint16 {
+func Parse2ByteValue(raw []byte) uint16 {
 	if len(raw) != 2 {
 		log.Fatal("Parse2ByteValue: raw is not the right size")
 	}
@@ -35,7 +35,7 @@ func Parse2ByteValue(raw []byte, byteOrder binary.ByteOrder) uint16 {
 
 	var container uint16
 
-	err := binary.Read(buffer, byteOrder, &container)
+	err := binary.Read(buffer, binary.LittleEndian, &container)
 
 	if err != nil {
 		log.Fatalf("parse:Parse2ByteValue %v\n", err)
