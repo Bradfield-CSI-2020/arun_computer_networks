@@ -10,6 +10,7 @@ type MyFile struct {
 	PCapHeader     PCapFileHeader
 	PacketDataData []PacketData
 	IpDataGramData []IpDataGram
+	TcpData        []TcpDataGram
 }
 
 type PCapFileHeader struct {
@@ -46,7 +47,7 @@ type EtherNetFrameRaw struct {
 type IpHeader struct {
 	InternetHeaderLength uint32
 	TotalLength          uint32
-	ECN			         uint32
+	ECN                  uint32
 	Protocol             uint32
 	SourceIp             uint32
 	DestinationIp        uint32
@@ -57,12 +58,25 @@ type IpDataGram struct {
 	RawData  []byte
 }
 
+type TcpHeader struct {
+	SourcePort      uint16
+	DestinationPort uint16
+	SequenceNumber  uint32
+	AckNumber       uint32
+	DataOffset      uint32
+}
+
+type TcpDataGram struct {
+	TcpHeader TcpHeader
+	RawData   []byte
+}
+
 func ReadIpHeader(raw []byte) IpHeader {
 	var header IpHeader
 
 	header.InternetHeaderLength = uint32(raw[0]&0b1111) * 4
 	header.TotalLength = uint32(internal.Parse2ByteValueBig(raw[2:4]))
-	header.ECN = uint32(raw[1])&0x3
+	header.ECN = uint32(raw[1]) & 0x3
 	header.Protocol = uint32(raw[9])
 	header.SourceIp = internal.Parse4ByteValueBig(raw[12:16])
 	header.DestinationIp = internal.Parse4ByteValueBig(raw[16:20])
@@ -81,6 +95,18 @@ func ReadEtherNetHeaders(raw []byte) EtherNetFrameRaw {
 	etherNetFrame.InterPacketGap = raw[len(raw)-12:]
 
 	return etherNetFrame
+}
+
+func ReadTcpHeader(raw []byte) TcpHeader {
+	var header TcpHeader
+
+	header.SourcePort = internal.Parse2ByteValueBig(raw[0:2])
+	header.DestinationPort = internal.Parse2ByteValueBig(raw[2:4])
+	header.SequenceNumber = internal.Parse4ByteValueBig(raw[4:8])
+	header.AckNumber = internal.Parse4ByteValueBig(raw[8:12])
+	header.DataOffset = uint32(raw[12]>>4) * 4
+
+	return header
 }
 
 func ReadPacketHeader(raw []byte) PcapPacketHeader {

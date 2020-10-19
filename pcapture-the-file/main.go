@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"computer_networks/parse"
 	"fmt"
 	"log"
 	"os"
+	"sort"
 )
 
 func main() {
@@ -29,6 +31,7 @@ func main() {
 
 	myFile.PCapHeader = globalHeader
 
+	fmt.Println("---")
 	//fmt.Printf("version: %d.%d\n", globalHeader.MajorVersion, globalHeader.MinorVersion)
 	//fmt.Printf("timestamp offset: %d\n", globalHeader.TimestampOffset)
 	//fmt.Printf("timestamp accuracy: %d\n", globalHeader.TimestampAccuracy)
@@ -38,6 +41,7 @@ func main() {
 	bytesRead := -1
 
 	for bytesRead != 0 {
+		// read packet header
 		var rawPacketHeader = make([]byte, 16)
 		read, pageErr := file.Read(rawPacketHeader)
 
@@ -59,6 +63,11 @@ func main() {
 
 		packetData.PacketHeader = packetHeader
 
+		//fmt.Printf("timestamp seconds: %d\n", packetHeader.TimestampSeconds)
+		//fmt.Printf("timestamp micro: %d\n", packetHeader.TimestampMicroSeconds)
+		//fmt.Printf("packet length: %d\n", packetHeader.PacketLength)
+		//fmt.Printf("full packet length: %d\n", packetHeader.FullPacketLength)
+
 		var rawPacketData = make([]byte, packetHeader.PacketLength)
 
 		_, packetReadErr := file.Read(rawPacketData)
@@ -69,6 +78,37 @@ func main() {
 
 		packetData.RawData = rawPacketData
 		packetData.EtherNetFrame = parse.ReadEtherNetHeaders(rawPacketData)
+
+		// TODO: what is the proper way to decode mac addresses?
+		//fmt.Printf("DestinationMac address: %s\n", hex.EncodeToString(packetData.EtherNetFrame.DestinationMac))
+		//fmt.Printf("SourceMac address: %s\n", hex.EncodeToString(packetData.EtherNetFrame.SourceMac))
+
+		// TODO: looks like requests ans responses have the mac addresses swapped
+		//if "c4e984876028" != hex.EncodeToString(packetData.EtherNetFrame.DestinationMac) {
+		//	log.Fatalln("DestinationMac address mismatch !")
+		//}
+		//
+		//if "a45e60df2e1b" != hex.EncodeToString(packetData.EtherNetFrame.SourceMac) {
+		//	log.Fatalln("SourceMac address mismatch !")
+		//}
+
+		//fmt.Printf("DestinationMac size: %d\n", len(packetData.EtherNetFrame.DestinationMac))
+		//fmt.Printf("SourceMac size: %d\n", len(packetData.EtherNetFrame.SourceMac))
+		//fmt.Printf("EtherType size: %d\n", len(packetData.EtherNetFrame.EtherType))
+		//fmt.Printf("IpRawPayload size: %d\n", len(packetData.EtherNetFrame.IpRawPayload))
+		//fmt.Printf("InterPacketGap size: %d\n", len(packetData.EtherNetFrame.InterPacketGap))
+
+		if myFile.PacketDataData == nil {
+			myFile.PacketDataData = []parse.PacketData{packetData}
+		} else {
+			myFile.PacketDataData = append(myFile.PacketDataData, packetData)
+		}
+
+		totalSize := len(packetData.EtherNetFrame.DestinationMac) + len(packetData.EtherNetFrame.SourceMac) + len(packetData.EtherNetFrame.EtherType) + len(packetData.EtherNetFrame.IpRawPayload) + len(packetData.EtherNetFrame.InterPacketGap)
+
+		if totalSize != len(packetData.RawData) {
+			log.Fatalln("ethernet frame size mismatch")
+		}
 
 		ipHeader := parse.ReadIpHeader(packetData.EtherNetFrame.IpRawPayload)
 
@@ -85,54 +125,87 @@ func main() {
 			myFile.IpDataGramData = append(myFile.IpDataGramData, ipDataGram)
 		}
 
-		fmt.Println("")
-		fmt.Printf("InternetHeaderLength: %d\n", ipHeader.InternetHeaderLength)
-		fmt.Printf("Data Length %d\n", len(rawData))
-		fmt.Printf("TotalLength: %d\n", ipHeader.TotalLength)
-
-		fmt.Printf("ECN: %d\n", ipHeader.ECN)
-		fmt.Printf("Protocol: %d\n", ipHeader.Protocol)
-		fmt.Printf("SourceIp: %d\n", ipHeader.SourceIp)
-		fmt.Printf("DestinationIp: %d\n", ipHeader.DestinationIp)
-		fmt.Println("")
-
-		// TODO: what is the proper way to decode mac addresses?
-		//fmt.Printf("DestinationMac address: %s\n", hex.EncodeToString(packetData.EtherNetFrame.DestinationMac))
-		//fmt.Printf("SourceMac address: %s\n", hex.EncodeToString(packetData.EtherNetFrame.SourceMac))
-
-		// TODO: looks like requests ans responses have the mac addresses swapped
-		//if "c4e984876028" != hex.EncodeToString(packetData.EtherNetFrame.DestinationMac) {
-		//	log.Fatalln("DestinationMac address mismatch !")
-		//}
+		//fmt.Println("")
+		//fmt.Printf("InternetHeaderLength: %d\n", ipHeader.InternetHeaderLength)
+		//fmt.Printf("Data Length %d\n", len(rawData))
+		//fmt.Printf("TotalLength: %d\n", ipHeader.TotalLength)
 		//
-		//if "a45e60df2e1b" != hex.EncodeToString(packetData.EtherNetFrame.SourceMac) {
-		//	log.Fatalln("SourceMac address mismatch !")
-		//}
+		//fmt.Printf("ECN: %d\n", ipHeader.ECN)
+		//fmt.Printf("Protocol: %d\n", ipHeader.Protocol)
+		//fmt.Printf("SourceIp: %d\n", ipHeader.SourceIp)
+		//fmt.Printf("DestinationIp: %d\n", ipHeader.DestinationIp)
+		//fmt.Println("")
 
-		//fmt.Printf("DestinationMac size: %d\n", len(packetData.EtherNetFrameRaw.DestinationMac))
-		//fmt.Printf("SourceMac size: %d\n", len(packetData.EtherNetFrameRaw.SourceMac))
-		//fmt.Printf("EtherType size: %d\n", len(packetData.EtherNetFrameRaw.EtherType))
-		//fmt.Printf("IpRawPayload size: %d\n", len(packetData.EtherNetFrameRaw.IpRawPayload))
-		//fmt.Printf("InterPacketGap size: %d\n", len(packetData.EtherNetFrameRaw.InterPacketGap))
+		tcpHeader := parse.ReadTcpHeader(ipDataGram.RawData)
+		var tcpData []byte
 
-		if myFile.PacketDataData == nil {
-			myFile.PacketDataData = []parse.PacketData{packetData}
+		if len(ipDataGram.RawData) > int(tcpHeader.DataOffset) {
+			tcpData = ipDataGram.RawData[tcpHeader.DataOffset:]
 		} else {
-			myFile.PacketDataData = append(myFile.PacketDataData, packetData)
+			tcpData = nil
 		}
 
-		totalSize := len(packetData.EtherNetFrame.DestinationMac) + len(packetData.EtherNetFrame.SourceMac) + len(packetData.EtherNetFrame.EtherType) + len(packetData.EtherNetFrame.IpRawPayload) + len(packetData.EtherNetFrame.InterPacketGap)
+		fmt.Println("")
+		fmt.Printf("Source Port: %d\n", tcpHeader.SourcePort)
+		fmt.Printf("Destication Port: %d\n", tcpHeader.DestinationPort)
+		fmt.Printf("SequenceNumber: %d\n", tcpHeader.SequenceNumber)
+		fmt.Printf("AckNumber: %d\n", tcpHeader.AckNumber)
+		fmt.Printf("DataOffset: %d\n", tcpHeader.DataOffset)
+		fmt.Println("")
+		fmt.Printf("Size of total data: %d\n", len(ipDataGram.RawData))
+		fmt.Printf("Size of tcp data: %d\n", len(tcpData))
+		fmt.Println("---")
 
-		if totalSize != len(packetData.RawData) {
-			log.Fatalln("ethernet frame size mismatch")
+		var tcpDataGram parse.TcpDataGram
+
+		tcpDataGram.TcpHeader = tcpHeader
+		tcpDataGram.RawData = tcpData
+
+		if myFile.TcpData == nil {
+			myFile.TcpData = []parse.TcpDataGram{tcpDataGram}
+		} else {
+			myFile.TcpData = append(myFile.TcpData, tcpDataGram)
 		}
+	}
+	//fmt.Printf("total packet data count: %d\n", len(myFile.PacketDataData))
 
-		//fmt.Printf("timestamp seconds: %d\n", packetHeader.TimestampSeconds)
-		//fmt.Printf("timestamp micro: %d\n", packetHeader.TimestampMicroSeconds)
-		//fmt.Printf("packet length: %d\n", packetHeader.PacketLength)
-		//fmt.Printf("full packet length: %d\n", packetHeader.FullPacketLength)
+	var allHttpData = myFile.TcpData
+
+	sort.Slice(allHttpData, func(i, j int) bool { return allHttpData[i].TcpHeader.SequenceNumber < allHttpData[j].TcpHeader.SequenceNumber })
+
+	var httpData []byte
+
+	for _, v := range allHttpData {
+		if v.RawData != nil {
+			httpData = append(httpData, v.RawData...)
+		}
 	}
 
-	//fmt.Printf("total packet data count: %d\n", len(myFile.PacketDataData))
+	fmt.Printf("http data size: %d\n", len(httpData))
+
+	parts := bytes.SplitN(httpData, []byte{'\r', '\n', '\r', '\n'}, 2)
+
+	fmt.Println(string(parts[0]))
+	fmt.Println(string(parts[1]))
+
+	//newFile, e := os.Create("image.jpeg")
+	//
+	//if e != nil {
+	//	log.Fatalf("failed to write file %v\n", e)
+	//}
+	//
+	//_, writeErr := newFile.Write(parts[1])
+	//
+	//if writeErr != nil {
+	//	log.Fatalf("failed to write file %v\n", e)
+	//}
+	//
+	//closeErr := newFile.Close()
+	//
+	//if closeErr != nil {
+	//	log.Fatalf("failed to write file %v\n", e)
+	//}
+	//
+	//fmt.Println("File written to image.jpg")
 
 }
