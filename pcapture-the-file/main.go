@@ -31,7 +31,7 @@ func main() {
 
 	myFile.PCapHeader = globalHeader
 
-	fmt.Println("---")
+	//fmt.Println("---")
 	//fmt.Printf("version: %d.%d\n", globalHeader.MajorVersion, globalHeader.MinorVersion)
 	//fmt.Printf("timestamp offset: %d\n", globalHeader.TimestampOffset)
 	//fmt.Printf("timestamp accuracy: %d\n", globalHeader.TimestampAccuracy)
@@ -145,16 +145,16 @@ func main() {
 			tcpData = nil
 		}
 
-		fmt.Println("")
-		fmt.Printf("Source Port: %d\n", tcpHeader.SourcePort)
-		fmt.Printf("Destication Port: %d\n", tcpHeader.DestinationPort)
-		fmt.Printf("SequenceNumber: %d\n", tcpHeader.SequenceNumber)
-		fmt.Printf("AckNumber: %d\n", tcpHeader.AckNumber)
-		fmt.Printf("DataOffset: %d\n", tcpHeader.DataOffset)
-		fmt.Println("")
-		fmt.Printf("Size of total data: %d\n", len(ipDataGram.RawData))
-		fmt.Printf("Size of tcp data: %d\n", len(tcpData))
-		fmt.Println("---")
+		//fmt.Println("")
+		//fmt.Printf("Source Port: %d\n", tcpHeader.SourcePort)
+		//fmt.Printf("Destication Port: %d\n", tcpHeader.DestinationPort)
+		//fmt.Printf("SequenceNumber: %d\n", tcpHeader.SequenceNumber)
+		//fmt.Printf("AckNumber: %d\n", tcpHeader.AckNumber)
+		//fmt.Printf("DataOffset: %d\n", tcpHeader.DataOffset)
+		//fmt.Println("")
+		//fmt.Printf("Size of total data: %d\n", len(ipDataGram.RawData))
+		//fmt.Printf("Size of tcp data: %d\n", len(tcpData))
+		//fmt.Println("---")
 
 		var tcpDataGram parse.TcpDataGram
 
@@ -176,7 +176,7 @@ func main() {
 	var httpData []byte
 
 	for _, v := range allHttpData {
-		if v.RawData != nil {
+		if v.RawData != nil && v.TcpHeader.SourcePort == 80 {
 			httpData = append(httpData, v.RawData...)
 		}
 	}
@@ -186,7 +186,7 @@ func main() {
 	parts := bytes.SplitN(httpData, []byte{'\r', '\n', '\r', '\n'}, 2)
 
 	fmt.Println(string(parts[0]))
-	fmt.Println(string(parts[1]))
+	fmt.Println(len(parts[1]))
 
 	//newFile, e := os.Create("image.jpeg")
 	//
