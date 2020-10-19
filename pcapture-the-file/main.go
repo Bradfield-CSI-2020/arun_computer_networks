@@ -145,16 +145,16 @@ func main() {
 			tcpData = nil
 		}
 
-		//fmt.Println("")
-		//fmt.Printf("Source Port: %d\n", tcpHeader.SourcePort)
-		//fmt.Printf("Destication Port: %d\n", tcpHeader.DestinationPort)
-		//fmt.Printf("SequenceNumber: %d\n", tcpHeader.SequenceNumber)
-		//fmt.Printf("AckNumber: %d\n", tcpHeader.AckNumber)
-		//fmt.Printf("DataOffset: %d\n", tcpHeader.DataOffset)
-		//fmt.Println("")
-		//fmt.Printf("Size of total data: %d\n", len(ipDataGram.RawData))
-		//fmt.Printf("Size of tcp data: %d\n", len(tcpData))
-		//fmt.Println("---")
+		fmt.Println("")
+		fmt.Printf("Source Port: %d\n", tcpHeader.SourcePort)
+		fmt.Printf("Destication Port: %d\n", tcpHeader.DestinationPort)
+		fmt.Printf("SequenceNumber: %d\n", tcpHeader.SequenceNumber)
+		fmt.Printf("AckNumber: %d\n", tcpHeader.AckNumber)
+		fmt.Printf("DataOffset: %d\n", tcpHeader.DataOffset)
+		fmt.Println("")
+		fmt.Printf("Size of total data: %d\n", len(ipDataGram.RawData))
+		fmt.Printf("Size of tcp data: %d\n", len(tcpData))
+		fmt.Println("---")
 
 		var tcpDataGram parse.TcpDataGram
 
@@ -175,18 +175,29 @@ func main() {
 
 	var httpData []byte
 
+	var alreadySeen = map[uint32][]byte{}
+
 	for _, v := range allHttpData {
-		if v.RawData != nil && v.TcpHeader.SourcePort == 80 {
-			httpData = append(httpData, v.RawData...)
+		if v.RawData != nil && v.TcpHeader.DestinationPort != 80 {
+			if alreadySeen[v.TcpHeader.SequenceNumber] == nil {
+				httpData = append(httpData, v.RawData...)
+				alreadySeen[v.TcpHeader.SequenceNumber] = v.RawData
+				//fmt.Println("sequence number: ", v.TcpHeader.SequenceNumber)
+			}
+
 		}
 	}
 
 	fmt.Printf("http data size: %d\n", len(httpData))
 
-	parts := bytes.SplitN(httpData, []byte{'\r', '\n', '\r', '\n'}, 2)
+	headersAndPayload := bytes.Split(httpData, []byte{'\r', '\n', '\r', '\n'})
 
-	fmt.Println(string(parts[0]))
-	fmt.Println(len(parts[1]))
+	if len(headersAndPayload) != 2 {
+		log.Fatalln("unexpected size")
+	}
+
+	fmt.Println(string(headersAndPayload[0]))
+	fmt.Println(len(headersAndPayload[1]))
 
 	//newFile, e := os.Create("image.jpeg")
 	//
@@ -194,7 +205,7 @@ func main() {
 	//	log.Fatalf("failed to write file %v\n", e)
 	//}
 	//
-	//_, writeErr := newFile.Write(parts[1])
+	//_, writeErr := newFile.Write(headersAndPayload[1])
 	//
 	//if writeErr != nil {
 	//	log.Fatalf("failed to write file %v\n", e)
