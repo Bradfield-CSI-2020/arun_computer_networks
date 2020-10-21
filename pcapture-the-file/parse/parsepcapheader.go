@@ -1,9 +1,9 @@
 package parse
 
 import (
-	"computer_networks/internal"
 	"encoding/binary"
 	"log"
+	"pcapture_the_flag/internal"
 )
 
 type MyFile struct {
