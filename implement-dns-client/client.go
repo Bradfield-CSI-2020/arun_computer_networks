@@ -52,9 +52,8 @@ func MakeUdpRequest() {
 	os.Exit(0)
 }
 
-func MakeTcpRequest()  {
+func MakeTcpRequest() {
 	fmt.Println("Hello arun !")
-
 
 	tcpAddr, err := net.ResolveTCPAddr("tcp4", "localhost:3001")
 

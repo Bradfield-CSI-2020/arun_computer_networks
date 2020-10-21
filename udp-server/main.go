@@ -27,7 +27,6 @@ func main() {
 		handleClient(conn)
 	}
 
-
 }
 
 func handleClient(conn *net.UDPConn) {
