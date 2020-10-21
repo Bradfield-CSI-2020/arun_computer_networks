@@ -19,6 +19,7 @@ func main() {
 		log.Fatalf("parse:readError %v\n", fileOpenErr)
 	}
 
+	// first 24 bytes are the Pcapheader
 	var rawPCapHeader = make([]byte, 24)
 
 	_, pageErr := file.Read(rawPCapHeader)
@@ -83,7 +84,7 @@ func main() {
 		//fmt.Printf("DestinationMac address: %s\n", hex.EncodeToString(packetData.EtherNetFrame.DestinationMac))
 		//fmt.Printf("SourceMac address: %s\n", hex.EncodeToString(packetData.EtherNetFrame.SourceMac))
 
-		// TODO: looks like requests ans responses have the mac addresses swapped
+		// TODO: looks like requests and responses have the mac addresses swapped
 		//if "c4e984876028" != hex.EncodeToString(packetData.EtherNetFrame.DestinationMac) {
 		//	log.Fatalln("DestinationMac address mismatch !")
 		//}
@@ -125,16 +126,16 @@ func main() {
 			myFile.IpDataGramData = append(myFile.IpDataGramData, ipDataGram)
 		}
 
-		//fmt.Println("")
-		//fmt.Printf("InternetHeaderLength: %d\n", ipHeader.InternetHeaderLength)
-		//fmt.Printf("Data Length %d\n", len(rawData))
-		//fmt.Printf("TotalLength: %d\n", ipHeader.TotalLength)
-		//
-		//fmt.Printf("ECN: %d\n", ipHeader.ECN)
-		//fmt.Printf("Protocol: %d\n", ipHeader.Protocol)
-		//fmt.Printf("SourceIp: %d\n", ipHeader.SourceIp)
-		//fmt.Printf("DestinationIp: %d\n", ipHeader.DestinationIp)
-		//fmt.Println("")
+		fmt.Println("")
+		fmt.Printf("InternetHeaderLength: %d\n", ipHeader.InternetHeaderLength)
+		fmt.Printf("Data Length %d\n", len(rawData))
+		fmt.Printf("TotalLength: %d\n", ipHeader.TotalLength)
+
+		fmt.Printf("ECN: %d\n", ipHeader.ECN)
+		fmt.Printf("Protocol: %d\n", ipHeader.Protocol)
+		fmt.Printf("SourceIp: %d\n", ipHeader.SourceIp)
+		fmt.Printf("DestinationIp: %d\n", ipHeader.DestinationIp)
+		fmt.Println("")
 
 		tcpHeader := parse.ReadTcpHeader(ipDataGram.RawData)
 		var tcpData []byte
@@ -145,16 +146,15 @@ func main() {
 			tcpData = nil
 		}
 
-		fmt.Println("")
-		fmt.Printf("Source Port: %d\n", tcpHeader.SourcePort)
-		fmt.Printf("Destication Port: %d\n", tcpHeader.DestinationPort)
-		fmt.Printf("SequenceNumber: %d\n", tcpHeader.SequenceNumber)
-		fmt.Printf("AckNumber: %d\n", tcpHeader.AckNumber)
-		fmt.Printf("DataOffset: %d\n", tcpHeader.DataOffset)
-		fmt.Println("")
-		fmt.Printf("Size of total data: %d\n", len(ipDataGram.RawData))
-		fmt.Printf("Size of tcp data: %d\n", len(tcpData))
-		fmt.Println("---")
+		//fmt.Println("")
+		//fmt.Printf("Source Port: %d\n", tcpHeader.SourcePort)
+		//fmt.Printf("Destication Port: %d\n", tcpHeader.DestinationPort)
+		//fmt.Printf("SequenceNumber: %d\n", tcpHeader.SequenceNumber)
+		//fmt.Printf("AckNumber: %d\n", tcpHeader.AckNumber)
+		//fmt.Printf("DataOffset: %d\n", tcpHeader.DataOffset)
+		//fmt.Printf("Size of total data: %d\n", len(ipDataGram.RawData))
+		//fmt.Printf("Size of tcp data: %d\n", len(tcpData))
+		//fmt.Println("---")
 
 		var tcpDataGram parse.TcpDataGram
 
@@ -181,6 +181,17 @@ func main() {
 		if v.RawData != nil && v.TcpHeader.DestinationPort != 80 {
 			if alreadySeen[v.TcpHeader.SequenceNumber] == nil {
 				httpData = append(httpData, v.RawData...)
+
+				//fmt.Println("---")
+				//fmt.Printf("DataOffset: %d\n", v.TcpHeader.DataOffset)
+				//fmt.Printf("Size of raw data: %d\n", len(v.RawData))
+				//fmt.Println("---")
+
+				if v.TcpHeader.DataOffset != 32 {
+					log.Fatalln("data offset is bad")
+				}
+
+
 				alreadySeen[v.TcpHeader.SequenceNumber] = v.RawData
 				//fmt.Println("sequence number: ", v.TcpHeader.SequenceNumber)
 			}
@@ -197,7 +208,8 @@ func main() {
 	}
 
 	fmt.Println(string(headersAndPayload[0]))
-	fmt.Println(len(headersAndPayload[1]))
+	fmt.Println("")
+	fmt.Println("size of binary",len(headersAndPayload[1]))
 
 	//newFile, e := os.Create("image.jpeg")
 	//

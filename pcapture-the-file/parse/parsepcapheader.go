@@ -74,7 +74,7 @@ type TcpDataGram struct {
 func ReadIpHeader(raw []byte) IpHeader {
 	var header IpHeader
 
-	header.InternetHeaderLength = uint32(raw[0]&0b1111) * 4
+	header.InternetHeaderLength = uint32(raw[0]&15) * 4
 	header.TotalLength = uint32(internal.Parse2ByteValueBig(raw[2:4]))
 	header.ECN = uint32(raw[1]) & 0x3
 	header.Protocol = uint32(raw[9])
