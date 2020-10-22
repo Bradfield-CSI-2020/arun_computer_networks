@@ -82,6 +82,20 @@ func (message *dnsMessage) Print() {
 	fmt.Printf("No. of Answers: %d\n", message.header.ANCount)
 	fmt.Printf("No. of Name Servers: %d\n", message.header.NSCount)
 	fmt.Printf("No. of Authoritative Records: %d\n", message.header.ARCount)
+
+	//size of response:  44
+	//Reply ID: 256
+	//QR Flag: 0
+	//OPCode Flag: 0
+	//AA Flag: 0
+	//TC Flag: 0
+	//RD Flag: 0
+	//RA Flag: 0
+	//RCode Flag: 0
+	//No. of Questions: 1
+	//No. of Answers: 1
+	//No. of Name Servers: 0
+	//No. of Authoritative Records: 0
 }
 
 func ReadPayload(raw []byte) dnsMessage {
@@ -97,14 +111,15 @@ func ReadPayload(raw []byte) dnsMessage {
 
 	// First 8 bits
 	message.header.Flags.QR = flagsRaw[0] & byte(1) << 7
-	message.header.Flags.OPCode = (flagsRaw[0] & byte(15) << 4) >> 4
-	message.header.Flags.AA = (flagsRaw[0] & byte(1) << 3) >> 3
-	message.header.Flags.TC = (flagsRaw[0] & byte(1) << 2) >> 2
-	message.header.Flags.RD = (flagsRaw[0] & byte(1) << 1) >> 1
-	message.header.Flags.RA = flagsRaw[0] & byte(1)
+	message.header.Flags.OPCode = (flagsRaw[0] & byte(120)) >> 3
+	message.header.Flags.AA = (flagsRaw[0] & (byte(1) << 2)) >> 2
+	message.header.Flags.TC = (flagsRaw[0] & (byte(1) << 1)) >> 1
+	message.header.Flags.RD = flagsRaw[0] & byte(1)
+
 
 	// Second 8 bits
 	// message.header.Flags.Z -> this reserved for future and not needed
+	message.header.Flags.RA = (flagsRaw[0] & (byte(1) << 7)) >> 7
 	message.header.Flags.RCode = flagsRaw[1] & byte(15)
 
 	message.header.QDCount = binary.BigEndian.Uint16(headerParts[4:6])
@@ -129,7 +144,7 @@ func (message *dnsMessage) GenerateBinaryPayload() []byte {
 		(message.header.Flags.QR << 7) | // set QR     // TODO: no need to shift just set to zero
 		byte(0) | // set OPCODE (NOT NEEDED) all zero for QUERY
 		byte(0) | // set AA (NOT NEEDED) all zero
-		(byte(1) << 2) | // set TC as needed? 	0000 0100
+		byte(0)	| //
 		(byte(1) << 1) | // set RD as required 	0000 0010
 		byte(0) // set RA to zero
 
