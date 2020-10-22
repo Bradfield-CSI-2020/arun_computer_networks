@@ -10,10 +10,16 @@ import (
 )
 
 func main() {
-	MakeUdpRequest()
+
+	if len(os.Args) != 2  {
+		log.Fatalf("expected 1 args -> got %d args instead", len(os.Args) - 1)
+	}
+
+	makeDnsRequest(os.Args[1])
 }
 
-func MakeUdpRequest() {
+func makeDnsRequest(domainName string) {
+
 	udpAddr, err := net.ResolveUDPAddr("udp4", "8.8.8.8:53")
 
 	if err != nil {
@@ -26,7 +32,7 @@ func MakeUdpRequest() {
 		log.Fatalf("error dialing udp: %v\n ", err)
 	}
 
-	message := dns_message.InitQuery("google.com")
+	message := dns_message.InitQuery(domainName)
 
 	messageBin := message.GenerateBinaryPayload()
 
@@ -59,6 +65,7 @@ func MakeUdpRequest() {
 	os.Exit(0)
 }
 
+// NOT used
 func MakeTcpRequest() {
 	fmt.Println("Hello arun !")
 

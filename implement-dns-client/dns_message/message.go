@@ -3,7 +3,9 @@ package dns_message
 import (
 	"encoding/binary"
 	"fmt"
+	"math/rand"
 	"strings"
+	"time"
 )
 
 type dnsMessage struct {
@@ -54,7 +56,10 @@ func InitQuery(domainName string) dnsMessage {
 
 	var message dnsMessage
 
-	message.header.Id = 256 // TODO: make this random
+	source := rand.NewSource(time.Now().UnixNano())
+	generator := rand.New(source)
+
+	message.header.Id = uint16(generator.Int31n(1 << 16))  // TODO: make this random
 	message.header.Flags.QR = 0
 	message.header.Flags.OPCode = 0
 	message.header.QDCount = 1
@@ -82,20 +87,6 @@ func (message *dnsMessage) Print() {
 	fmt.Printf("No. of Answers: %d\n", message.header.ANCount)
 	fmt.Printf("No. of Name Servers: %d\n", message.header.NSCount)
 	fmt.Printf("No. of Authoritative Records: %d\n", message.header.ARCount)
-
-	//size of response:  44
-	//Reply ID: 256
-	//QR Flag: 0
-	//OPCode Flag: 0
-	//AA Flag: 0
-	//TC Flag: 0
-	//RD Flag: 0
-	//RA Flag: 0
-	//RCode Flag: 0
-	//No. of Questions: 1
-	//No. of Answers: 1
-	//No. of Name Servers: 0
-	//No. of Authoritative Records: 0
 }
 
 func ReadPayload(raw []byte) dnsMessage {
