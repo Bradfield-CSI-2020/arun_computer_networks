@@ -11,8 +11,8 @@ import (
 
 func main() {
 
-	if len(os.Args) != 2  {
-		log.Fatalf("expected 1 args -> got %d args instead", len(os.Args) - 1)
+	if len(os.Args) != 2 {
+		log.Fatalf("expected 1 args -> got %d args instead", len(os.Args)-1)
 	}
 
 	makeDnsRequest(os.Args[1])
@@ -32,13 +32,15 @@ func makeDnsRequest(domainName string) {
 		log.Fatalf("error dialing udp: %v\n ", err)
 	}
 
-	message := dns_message.InitQuery(domainName)
+	query := dns_message.InitQuery(domainName)
 
-	messageBin := message.GenerateBinaryPayload()
+	query.Print()
 
-	fmt.Println("size of message: ", len(messageBin))
+	payload := query.GenerateBinaryPayload()
 
-	_, err = conn.Write(messageBin)
+	fmt.Println("size of query: ", len(payload))
+
+	_, err = conn.Write(payload)
 
 	if err != nil {
 		log.Fatalf("error writing to udp socket: %v\n ", err)

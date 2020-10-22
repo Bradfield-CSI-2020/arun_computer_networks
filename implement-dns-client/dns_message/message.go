@@ -10,6 +10,14 @@ import (
 	"time"
 )
 
+type DnsReply struct {
+	message dnsMessage
+}
+
+type DnsQuery struct {
+	message dnsMessage
+}
+
 type dnsMessage struct {
 	header     messageHeader
 	question   nameServerQuestion
@@ -46,7 +54,7 @@ type nameServerQuestion struct {
 }
 
 type answer struct {
-	Name 	 []byte
+	Name     []byte
 	Type     []byte
 	Class    []byte
 	TTL      uint32
@@ -60,7 +68,7 @@ type authority struct {
 type additional struct {
 }
 
-func InitQuery(domainName string) dnsMessage {
+func InitQuery(domainName string) DnsQuery {
 
 	var message dnsMessage
 
@@ -79,10 +87,15 @@ func InitQuery(domainName string) dnsMessage {
 
 	message.question.Name = domainName
 
-	return message
+	var query DnsQuery
+	query.message = message
+	return query
 }
 
-func (message *dnsMessage) Print() {
+func (query *DnsQuery) Print() {
+	message := query.message
+
+	fmt.Printf("-------Query Headers -------:\n")
 	fmt.Printf("Reply ID: %d\n", message.header.Id)
 	fmt.Printf("QR Flag: %d\n", message.header.Flags.QR)
 	fmt.Printf("OPCode Flag: %d\n", message.header.Flags.OPCode)
@@ -96,15 +109,39 @@ func (message *dnsMessage) Print() {
 	fmt.Printf("No. of Name Servers: %d\n", message.header.NSCount)
 	fmt.Printf("No. of Authoritative Records: %d\n", message.header.ARCount)
 
-	fmt.Printf("-------:")
+	fmt.Println()
+	fmt.Printf("-------Query Question -------:\n")
+
+	fmt.Printf("QName: %d\n", message.question.Name)
+	fmt.Printf("QClass: %d\n", message.question.QClass)
+	fmt.Printf("QType: %d\n", message.question.QType)
+}
+
+func (reply *DnsReply) Print() {
+
+	message := reply.message
+	fmt.Println()
+	fmt.Printf("-------Reply Headers -------:\n")
+	fmt.Printf("Reply ID: %d\n", message.header.Id)
+	fmt.Printf("QR Flag: %d\n", message.header.Flags.QR)
+	fmt.Printf("OPCode Flag: %d\n", message.header.Flags.OPCode)
+	fmt.Printf("AA Flag: %d\n", message.header.Flags.AA)
+	fmt.Printf("TC Flag: %d\n", message.header.Flags.TC)
+	fmt.Printf("RD Flag: %d\n", message.header.Flags.RD)
+	fmt.Printf("RA Flag: %d\n", message.header.Flags.RA)
+	fmt.Printf("RCode Flag: %d\n", message.header.Flags.RCode)
+	fmt.Printf("No. of Questions: %d\n", message.header.QDCount)
+	fmt.Printf("No. of Answers: %d\n", message.header.ANCount)
+	fmt.Printf("No. of Name Servers: %d\n", message.header.NSCount)
+	fmt.Printf("No. of Authoritative Records: %d\n", message.header.ARCount)
+
+	fmt.Println()
+	fmt.Printf("-------Reply Ansswer -------:\n")
 	fmt.Printf("Name: %d\n", message.answer.Name)
 	fmt.Printf("Type: %d\n", message.answer.Type)
 	fmt.Printf("Class: %d\n", message.answer.Class)
 	fmt.Printf("TTL: %d\n", message.answer.TTL)
 	fmt.Printf("RD Length: %d\n", message.answer.RDLength)
-
-
-
 
 	var ipParts []string
 
@@ -116,7 +153,7 @@ func (message *dnsMessage) Print() {
 
 }
 
-func ReadPayload(raw []byte, domainName string) dnsMessage {
+func ReadPayload(raw []byte, domainName string) DnsReply {
 
 	var message dnsMessage
 	headerParts := raw[0:12]
@@ -161,16 +198,19 @@ func ReadPayload(raw []byte, domainName string) dnsMessage {
 	message.answer.Name = answerPart[0:2] // name is compressed and so is 2 octets
 	message.answer.Type = answerPart[2:4]
 	message.answer.Class = answerPart[4:6]
-	message.answer.TTL = binary.BigEndian.Uint32(answerPart[6:10]) // seconds
+	message.answer.TTL = binary.BigEndian.Uint32(answerPart[6:10])       // seconds
 	message.answer.RDLength = binary.BigEndian.Uint16(answerPart[10:12]) // octet count
-	message.answer.RData = answerPart[12:12+message.answer.RDLength]
+	message.answer.RData = answerPart[12 : 12+message.answer.RDLength]
 
-	return message
+	var reply DnsReply
+	reply.message = message
+	return reply
 
 }
 
-func (message *dnsMessage) GenerateBinaryPayload() []byte {
+func (query *DnsQuery) GenerateBinaryPayload() []byte {
 
+	message := query.message
 	// GenerateBinaryPayload Header
 	id := make([]byte, 2)
 
@@ -221,13 +261,13 @@ func (message *dnsMessage) GenerateBinaryPayload() []byte {
 // encode domain name labels into question format
 func encodeDomainName(domainName string) []byte {
 	labels := strings.Split(domainName, ".")
-	var bytes []byte
+	var raw []byte
 	for _, label := range labels {
 		size := uint8(len(label))
-		bytes = append(bytes, size)
-		bytes = append(bytes, []byte(label)...)
+		raw = append(raw, size)
+		raw = append(raw, []byte(label)...)
 	}
 
-	bytes = append(bytes, byte(0))
-	return bytes
+	raw = append(raw, byte(0))
+	return raw
 }
