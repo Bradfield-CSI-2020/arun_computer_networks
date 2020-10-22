@@ -10,8 +10,6 @@ import (
 )
 
 func main() {
-	fmt.Println("hello arun")
-
 	MakeUdpRequest()
 }
 
@@ -28,11 +26,9 @@ func MakeUdpRequest() {
 		log.Fatalf("error dialing udp: %v\n ", err)
 	}
 
-	var message dns_message.DnsMessage
+	message := dns_message.InitQuery("google.com")
 
-	message.Init("google.com")
-
-	messageBin := message.Generate()
+	messageBin := message.GenerateBinaryPayload()
 
 	_, err = conn.Write(messageBin)
 
@@ -48,7 +44,11 @@ func MakeUdpRequest() {
 		log.Fatalf("error reading from udp socket: %v\n ", err)
 	}
 
-	fmt.Println(string(buf[0:n]))
+	fmt.Println("size of response: ", n)
+
+	response := dns_message.ReadPayload(buf[0:n])
+
+	response.Print()
 
 	err = conn.Close()
 
