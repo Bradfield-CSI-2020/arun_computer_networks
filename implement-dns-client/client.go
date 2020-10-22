@@ -1,6 +1,7 @@
 package main
 
 import (
+	"dns_client/dns_message"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -15,7 +16,7 @@ func main() {
 }
 
 func MakeUdpRequest() {
-	udpAddr, err := net.ResolveUDPAddr("udp4", "localhost:3002")
+	udpAddr, err := net.ResolveUDPAddr("udp4", "8.8.8.8:53")
 
 	if err != nil {
 		log.Fatalf("error resolving udp address: %v\n ", err)
@@ -27,7 +28,13 @@ func MakeUdpRequest() {
 		log.Fatalf("error dialing udp: %v\n ", err)
 	}
 
-	_, err = conn.Write([]byte("anything"))
+	var message dns_message.DnsMessage
+
+	message.Init("google.com")
+
+	messageBin := message.Generate()
+
+	_, err = conn.Write(messageBin)
 
 	if err != nil {
 		log.Fatalf("error writing to udp socket: %v\n ", err)
