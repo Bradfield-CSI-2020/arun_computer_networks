@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -45,7 +46,7 @@ type nameServerQuestion struct {
 }
 
 type answer struct {
-	//Name []byte
+	Name 	 []byte
 	Type     []byte
 	Class    []byte
 	TTL      uint32
@@ -95,11 +96,24 @@ func (message *dnsMessage) Print() {
 	fmt.Printf("No. of Name Servers: %d\n", message.header.NSCount)
 	fmt.Printf("No. of Authoritative Records: %d\n", message.header.ARCount)
 
+	fmt.Printf("-------:")
+	fmt.Printf("Name: %d\n", message.answer.Name)
 	fmt.Printf("Type: %d\n", message.answer.Type)
 	fmt.Printf("Class: %d\n", message.answer.Class)
 	fmt.Printf("TTL: %d\n", message.answer.TTL)
 	fmt.Printf("RD Length: %d\n", message.answer.RDLength)
-	fmt.Printf("R Data: %d\n", message.answer.RData)
+
+
+
+
+	var ipParts []string
+
+	for _, v := range message.answer.RData {
+		ipParts = append(ipParts, strconv.Itoa(int(v)))
+	}
+
+	fmt.Println("IP Address: ", strings.Join(ipParts, "."))
+
 }
 
 func ReadPayload(raw []byte, domainName string) dnsMessage {
@@ -130,19 +144,26 @@ func ReadPayload(raw []byte, domainName string) dnsMessage {
 	message.header.NSCount = binary.BigEndian.Uint16(headerParts[8:10])
 	message.header.ARCount = binary.BigEndian.Uint16(headerParts[10:12])
 
-	domainRaw := encodeDomainName(domainName)
+	encodedDomainName := encodeDomainName(domainName)
+	questionRaw := encodedDomainName
 
-	parts := bytes.Split(raw, domainRaw)
+	qType := []byte{uint8(0), uint8(1)}
+	qClass := []byte{uint8(0), uint8(1)}
+
+	// append headers and question payloads
+	questionRaw = append(questionRaw, qType...)
+	questionRaw = append(questionRaw, qClass...)
+
+	parts := bytes.Split(raw, questionRaw)
 
 	answerPart := parts[1]
 
-	// TODO: check if the parts[0] matches the query
-
-	message.answer.Type = answerPart[0:2]
-	message.answer.Class = answerPart[2:4]
-	message.answer.TTL = binary.BigEndian.Uint32(answerPart[4:12])
-	message.answer.RDLength = binary.BigEndian.Uint16(answerPart[12:14])
-	message.answer.RData = answerPart[14:message.answer.RDLength]
+	message.answer.Name = answerPart[0:2] // name is compressed and so is 2 octets
+	message.answer.Type = answerPart[2:4]
+	message.answer.Class = answerPart[4:6]
+	message.answer.TTL = binary.BigEndian.Uint32(answerPart[6:10]) // seconds
+	message.answer.RDLength = binary.BigEndian.Uint16(answerPart[10:12]) // octet count
+	message.answer.RData = answerPart[12:12+message.answer.RDLength]
 
 	return message
 
