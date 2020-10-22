@@ -36,6 +36,8 @@ func makeDnsRequest(domainName string) {
 
 	messageBin := message.GenerateBinaryPayload()
 
+	fmt.Println("size of message: ", len(messageBin))
+
 	_, err = conn.Write(messageBin)
 
 	if err != nil {
@@ -52,7 +54,7 @@ func makeDnsRequest(domainName string) {
 
 	fmt.Println("size of response: ", n)
 
-	response := dns_message.ReadPayload(buf[0:n])
+	response := dns_message.ReadPayload(buf[0:n], domainName)
 
 	response.Print()
 

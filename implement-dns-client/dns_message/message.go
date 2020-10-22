@@ -1,6 +1,7 @@
 package dns_message
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"math/rand"
@@ -27,14 +28,14 @@ type messageHeader struct {
 }
 
 type messageHeaderFlags struct {
-	QR     byte // 0 or 1 (1 bit) - 0 for QUERY, 1 for RESPONSE
-	OPCode byte // 0000 -> for standard message QUERY
-	AA     byte
-	TC     byte
-	RD     byte
-	RA     byte
-	z      byte // 0000 -> 4 bits all zero
-	RCode  byte // 0000 -> 4 bits max
+	QR     uint8 // 0 or 1 (1 bit) - 0 for QUERY, 1 for RESPONSE
+	OPCode uint8 // 0000 -> for standard message QUERY
+	AA     uint8
+	TC     uint8
+	RD     uint8
+	RA     uint8
+	z      uint8 // 0000 -> 4 bits all zero
+	RCode  uint8 // 0000 -> 4 bits max
 }
 
 type nameServerQuestion struct {
@@ -44,6 +45,12 @@ type nameServerQuestion struct {
 }
 
 type answer struct {
+	//Name []byte
+	Type     []byte
+	Class    []byte
+	TTL      uint32
+	RDLength uint16
+	RData    []byte
 }
 
 type authority struct {
@@ -59,7 +66,7 @@ func InitQuery(domainName string) dnsMessage {
 	source := rand.NewSource(time.Now().UnixNano())
 	generator := rand.New(source)
 
-	message.header.Id = uint16(generator.Int31n(1 << 16))  // TODO: make this random
+	message.header.Id = uint16(generator.Int31n(1 << 16)) // TODO: make this random
 	message.header.Flags.QR = 0
 	message.header.Flags.OPCode = 0
 	message.header.QDCount = 1
@@ -87,9 +94,15 @@ func (message *dnsMessage) Print() {
 	fmt.Printf("No. of Answers: %d\n", message.header.ANCount)
 	fmt.Printf("No. of Name Servers: %d\n", message.header.NSCount)
 	fmt.Printf("No. of Authoritative Records: %d\n", message.header.ARCount)
+
+	fmt.Printf("Type: %d\n", message.answer.Type)
+	fmt.Printf("Class: %d\n", message.answer.Class)
+	fmt.Printf("TTL: %d\n", message.answer.TTL)
+	fmt.Printf("RD Length: %d\n", message.answer.RDLength)
+	fmt.Printf("R Data: %d\n", message.answer.RData)
 }
 
-func ReadPayload(raw []byte) dnsMessage {
+func ReadPayload(raw []byte, domainName string) dnsMessage {
 
 	var message dnsMessage
 	headerParts := raw[0:12]
@@ -101,12 +114,11 @@ func ReadPayload(raw []byte) dnsMessage {
 	flagsRaw := raw[2:4]
 
 	// First 8 bits
-	message.header.Flags.QR = flagsRaw[0] & byte(1) << 7
+	message.header.Flags.QR = (flagsRaw[0] & (uint8(255))) >> 7
 	message.header.Flags.OPCode = (flagsRaw[0] & byte(120)) >> 3
 	message.header.Flags.AA = (flagsRaw[0] & (byte(1) << 2)) >> 2
 	message.header.Flags.TC = (flagsRaw[0] & (byte(1) << 1)) >> 1
 	message.header.Flags.RD = flagsRaw[0] & byte(1)
-
 
 	// Second 8 bits
 	// message.header.Flags.Z -> this reserved for future and not needed
@@ -117,6 +129,20 @@ func ReadPayload(raw []byte) dnsMessage {
 	message.header.ANCount = binary.BigEndian.Uint16(headerParts[6:8])
 	message.header.NSCount = binary.BigEndian.Uint16(headerParts[8:10])
 	message.header.ARCount = binary.BigEndian.Uint16(headerParts[10:12])
+
+	domainRaw := encodeDomainName(domainName)
+
+	parts := bytes.Split(raw, domainRaw)
+
+	answerPart := parts[1]
+
+	// TODO: check if the parts[0] matches the query
+
+	message.answer.Type = answerPart[0:2]
+	message.answer.Class = answerPart[2:4]
+	message.answer.TTL = binary.BigEndian.Uint32(answerPart[4:12])
+	message.answer.RDLength = binary.BigEndian.Uint16(answerPart[12:14])
+	message.answer.RData = answerPart[14:message.answer.RDLength]
 
 	return message
 
@@ -135,7 +161,7 @@ func (message *dnsMessage) GenerateBinaryPayload() []byte {
 		(message.header.Flags.QR << 7) | // set QR     // TODO: no need to shift just set to zero
 		byte(0) | // set OPCODE (NOT NEEDED) all zero for QUERY
 		byte(0) | // set AA (NOT NEEDED) all zero
-		byte(0)	| //
+		byte(0) | //
 		(byte(1) << 1) | // set RD as required 	0000 0010
 		byte(0) // set RA to zero
 
