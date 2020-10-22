@@ -4,7 +4,8 @@
 
 1. Decode compressed Name
 2. Use random lookup address
-3  Multiple questions?
+3. Multiple questions?
+4. Handle response errors 
 
 ## Usage
 

@@ -10,13 +10,7 @@ import (
 	"time"
 )
 
-type DnsReply struct {
-	message dnsMessage
-}
-
-type DnsQuery struct {
-	message dnsMessage
-}
+// Base Message
 
 type dnsMessage struct {
 	header     messageHeader
@@ -68,7 +62,12 @@ type authority struct {
 type additional struct {
 }
 
-func InitQuery(domainName string) DnsQuery {
+// Query
+type DnsQuery struct {
+	message dnsMessage
+}
+
+func (query DnsQuery) InitQuery(domainName string) DnsQuery {
 
 	var message dnsMessage
 
@@ -87,125 +86,8 @@ func InitQuery(domainName string) DnsQuery {
 
 	message.question.Name = domainName
 
-	var query DnsQuery
 	query.message = message
 	return query
-}
-
-func (query *DnsQuery) Print() {
-	message := query.message
-
-	fmt.Printf("-------Query Headers -------:\n")
-	fmt.Printf("Reply ID: %d\n", message.header.Id)
-	fmt.Printf("QR Flag: %d\n", message.header.Flags.QR)
-	fmt.Printf("OPCode Flag: %d\n", message.header.Flags.OPCode)
-	fmt.Printf("AA Flag: %d\n", message.header.Flags.AA)
-	fmt.Printf("TC Flag: %d\n", message.header.Flags.TC)
-	fmt.Printf("RD Flag: %d\n", message.header.Flags.RD)
-	fmt.Printf("RA Flag: %d\n", message.header.Flags.RA)
-	fmt.Printf("RCode Flag: %d\n", message.header.Flags.RCode)
-	fmt.Printf("No. of Questions: %d\n", message.header.QDCount)
-	fmt.Printf("No. of Answers: %d\n", message.header.ANCount)
-	fmt.Printf("No. of Name Servers: %d\n", message.header.NSCount)
-	fmt.Printf("No. of Authoritative Records: %d\n", message.header.ARCount)
-
-	fmt.Println()
-	fmt.Printf("-------Query Question -------:\n")
-
-	fmt.Printf("QName: %d\n", message.question.Name)
-	fmt.Printf("QClass: %d\n", message.question.QClass)
-	fmt.Printf("QType: %d\n", message.question.QType)
-}
-
-func (reply *DnsReply) Print() {
-
-	message := reply.message
-	fmt.Println()
-	fmt.Printf("-------Reply Headers -------:\n")
-	fmt.Printf("Reply ID: %d\n", message.header.Id)
-	fmt.Printf("QR Flag: %d\n", message.header.Flags.QR)
-	fmt.Printf("OPCode Flag: %d\n", message.header.Flags.OPCode)
-	fmt.Printf("AA Flag: %d\n", message.header.Flags.AA)
-	fmt.Printf("TC Flag: %d\n", message.header.Flags.TC)
-	fmt.Printf("RD Flag: %d\n", message.header.Flags.RD)
-	fmt.Printf("RA Flag: %d\n", message.header.Flags.RA)
-	fmt.Printf("RCode Flag: %d\n", message.header.Flags.RCode)
-	fmt.Printf("No. of Questions: %d\n", message.header.QDCount)
-	fmt.Printf("No. of Answers: %d\n", message.header.ANCount)
-	fmt.Printf("No. of Name Servers: %d\n", message.header.NSCount)
-	fmt.Printf("No. of Authoritative Records: %d\n", message.header.ARCount)
-
-	fmt.Println()
-	fmt.Printf("-------Reply Ansswer -------:\n")
-	fmt.Printf("Name: %d\n", message.answer.Name)
-	fmt.Printf("Type: %d\n", message.answer.Type)
-	fmt.Printf("Class: %d\n", message.answer.Class)
-	fmt.Printf("TTL: %d\n", message.answer.TTL)
-	fmt.Printf("RD Length: %d\n", message.answer.RDLength)
-
-	var ipParts []string
-
-	for _, v := range message.answer.RData {
-		ipParts = append(ipParts, strconv.Itoa(int(v)))
-	}
-
-	fmt.Println("IP Address: ", strings.Join(ipParts, "."))
-
-}
-
-func ReadPayload(raw []byte, domainName string) DnsReply {
-
-	var message dnsMessage
-	headerParts := raw[0:12]
-
-	message.header.Id = binary.BigEndian.Uint16(raw[0:2])
-
-	message.header.Id = binary.BigEndian.Uint16(raw[0:2])
-
-	flagsRaw := raw[2:4]
-
-	// First 8 bits
-	message.header.Flags.QR = (flagsRaw[0] & (uint8(255))) >> 7
-	message.header.Flags.OPCode = (flagsRaw[0] & byte(120)) >> 3
-	message.header.Flags.AA = (flagsRaw[0] & (byte(1) << 2)) >> 2
-	message.header.Flags.TC = (flagsRaw[0] & (byte(1) << 1)) >> 1
-	message.header.Flags.RD = flagsRaw[0] & byte(1)
-
-	// Second 8 bits
-	// message.header.Flags.Z -> this reserved for future and not needed
-	message.header.Flags.RA = (flagsRaw[0] & (byte(1) << 7)) >> 7
-	message.header.Flags.RCode = flagsRaw[1] & byte(15)
-
-	message.header.QDCount = binary.BigEndian.Uint16(headerParts[4:6])
-	message.header.ANCount = binary.BigEndian.Uint16(headerParts[6:8])
-	message.header.NSCount = binary.BigEndian.Uint16(headerParts[8:10])
-	message.header.ARCount = binary.BigEndian.Uint16(headerParts[10:12])
-
-	encodedDomainName := encodeDomainName(domainName)
-	questionRaw := encodedDomainName
-
-	qType := []byte{uint8(0), uint8(1)}
-	qClass := []byte{uint8(0), uint8(1)}
-
-	// append headers and question payloads
-	questionRaw = append(questionRaw, qType...)
-	questionRaw = append(questionRaw, qClass...)
-
-	parts := bytes.Split(raw, questionRaw)
-
-	answerPart := parts[1]
-
-	message.answer.Name = answerPart[0:2] // name is compressed and so is 2 octets
-	message.answer.Type = answerPart[2:4]
-	message.answer.Class = answerPart[4:6]
-	message.answer.TTL = binary.BigEndian.Uint32(answerPart[6:10])       // seconds
-	message.answer.RDLength = binary.BigEndian.Uint16(answerPart[10:12]) // octet count
-	message.answer.RData = answerPart[12 : 12+message.answer.RDLength]
-
-	var reply DnsReply
-	reply.message = message
-	return reply
-
 }
 
 func (query *DnsQuery) GenerateBinaryPayload() []byte {
@@ -255,6 +137,126 @@ func (query *DnsQuery) GenerateBinaryPayload() []byte {
 	rawMessage = append(rawMessage, qClass...)
 
 	return rawMessage
+
+}
+
+func (query *DnsQuery) Print() {
+	message := query.message
+
+	fmt.Printf("-------Query Headers -------:\n")
+	fmt.Printf("Reply ID: %d\n", message.header.Id)
+	fmt.Printf("QR Flag: %d\n", message.header.Flags.QR)
+	fmt.Printf("OPCode Flag: %d\n", message.header.Flags.OPCode)
+	fmt.Printf("AA Flag: %d\n", message.header.Flags.AA)
+	fmt.Printf("TC Flag: %d\n", message.header.Flags.TC)
+	fmt.Printf("RD Flag: %d\n", message.header.Flags.RD)
+	fmt.Printf("RA Flag: %d\n", message.header.Flags.RA)
+	fmt.Printf("RCode Flag: %d\n", message.header.Flags.RCode)
+	fmt.Printf("No. of Questions: %d\n", message.header.QDCount)
+	fmt.Printf("No. of Answers: %d\n", message.header.ANCount)
+	fmt.Printf("No. of Name Servers: %d\n", message.header.NSCount)
+	fmt.Printf("No. of Authoritative Records: %d\n", message.header.ARCount)
+
+	fmt.Println()
+	fmt.Printf("-------Query Question -------:\n")
+
+	fmt.Printf("QName: %d\n", message.question.Name)
+	fmt.Printf("QClass: %d\n", message.question.QClass)
+	fmt.Printf("QType: %d\n", message.question.QType)
+}
+
+// DNS Reply
+type DnsReply struct {
+	message dnsMessage
+}
+
+func (reply DnsReply) ReadPayload(raw []byte, domainName string) DnsReply {
+
+	var message dnsMessage
+	headerParts := raw[0:12]
+
+	message.header.Id = binary.BigEndian.Uint16(raw[0:2])
+
+	message.header.Id = binary.BigEndian.Uint16(raw[0:2])
+
+	flagsRaw := raw[2:4]
+
+	// First 8 bits
+	message.header.Flags.QR = (flagsRaw[0] & (uint8(255))) >> 7
+	message.header.Flags.OPCode = (flagsRaw[0] & byte(120)) >> 3
+	message.header.Flags.AA = (flagsRaw[0] & (byte(1) << 2)) >> 2
+	message.header.Flags.TC = (flagsRaw[0] & (byte(1) << 1)) >> 1
+	message.header.Flags.RD = flagsRaw[0] & byte(1)
+
+	// Second 8 bits
+	// message.header.Flags.Z -> this reserved for future and not needed
+	message.header.Flags.RA = (flagsRaw[0] & (byte(1) << 7)) >> 7
+	message.header.Flags.RCode = flagsRaw[1] & byte(15)
+
+	message.header.QDCount = binary.BigEndian.Uint16(headerParts[4:6])
+	message.header.ANCount = binary.BigEndian.Uint16(headerParts[6:8])
+	message.header.NSCount = binary.BigEndian.Uint16(headerParts[8:10])
+	message.header.ARCount = binary.BigEndian.Uint16(headerParts[10:12])
+
+	encodedDomainName := encodeDomainName(domainName)
+	questionRaw := encodedDomainName
+
+	qType := []byte{uint8(0), uint8(1)}
+	qClass := []byte{uint8(0), uint8(1)}
+
+	// append headers and question payloads
+	questionRaw = append(questionRaw, qType...)
+	questionRaw = append(questionRaw, qClass...)
+
+	parts := bytes.Split(raw, questionRaw)
+
+	answerPart := parts[1]
+
+	message.answer.Name = answerPart[0:2] // name is compressed and so is 2 octets
+	message.answer.Type = answerPart[2:4]
+	message.answer.Class = answerPart[4:6]
+	message.answer.TTL = binary.BigEndian.Uint32(answerPart[6:10])       // seconds
+	message.answer.RDLength = binary.BigEndian.Uint16(answerPart[10:12]) // octet count
+	message.answer.RData = answerPart[12 : 12+message.answer.RDLength]
+
+	reply.message = message
+	return reply
+
+}
+
+func (reply *DnsReply) Print() {
+
+	message := reply.message
+	fmt.Println()
+	fmt.Printf("-------Reply Headers -------:\n")
+	fmt.Printf("Reply ID: %d\n", message.header.Id)
+	fmt.Printf("QR Flag: %d\n", message.header.Flags.QR)
+	fmt.Printf("OPCode Flag: %d\n", message.header.Flags.OPCode)
+	fmt.Printf("AA Flag: %d\n", message.header.Flags.AA)
+	fmt.Printf("TC Flag: %d\n", message.header.Flags.TC)
+	fmt.Printf("RD Flag: %d\n", message.header.Flags.RD)
+	fmt.Printf("RA Flag: %d\n", message.header.Flags.RA)
+	fmt.Printf("RCode Flag: %d\n", message.header.Flags.RCode)
+	fmt.Printf("No. of Questions: %d\n", message.header.QDCount)
+	fmt.Printf("No. of Answers: %d\n", message.header.ANCount)
+	fmt.Printf("No. of Name Servers: %d\n", message.header.NSCount)
+	fmt.Printf("No. of Authoritative Records: %d\n", message.header.ARCount)
+
+	fmt.Println()
+	fmt.Printf("-------Reply Ansswer -------:\n")
+	fmt.Printf("Name: %d\n", message.answer.Name)
+	fmt.Printf("Type: %d\n", message.answer.Type)
+	fmt.Printf("Class: %d\n", message.answer.Class)
+	fmt.Printf("TTL: %d\n", message.answer.TTL)
+	fmt.Printf("RD Length: %d\n", message.answer.RDLength)
+
+	var ipParts []string
+
+	for _, v := range message.answer.RData {
+		ipParts = append(ipParts, strconv.Itoa(int(v)))
+	}
+
+	fmt.Println("IP Address: ", strings.Join(ipParts, "."))
 
 }
 

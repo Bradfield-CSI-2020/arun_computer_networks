@@ -3,7 +3,6 @@ package main
 import (
 	"dns_client/dns_message"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -32,7 +31,9 @@ func makeDnsRequest(domainName string) {
 		log.Fatalf("error dialing udp: %v\n ", err)
 	}
 
-	query := dns_message.InitQuery(domainName)
+	var query dns_message.DnsQuery
+
+	query.InitQuery(domainName)
 
 	query.Print()
 
@@ -56,9 +57,11 @@ func makeDnsRequest(domainName string) {
 
 	fmt.Println("size of response: ", n)
 
-	response := dns_message.ReadPayload(buf[0:n], domainName)
+	var reply dns_message.DnsReply
 
-	response.Print()
+	reply.ReadPayload(buf[0:n], domainName)
+
+	reply.Print()
 
 	err = conn.Close()
 
@@ -67,32 +70,4 @@ func makeDnsRequest(domainName string) {
 	}
 
 	os.Exit(0)
-}
-
-// NOT used
-func MakeTcpRequest() {
-	fmt.Println("Hello arun !")
-
-	tcpAddr, err := net.ResolveTCPAddr("tcp4", "localhost:3001")
-
-	if err != nil {
-		log.Fatalf("error resolving tcp address: %v\n ", err)
-	}
-
-	conn, err := net.DialTCP("tcp", nil, tcpAddr)
-
-	if err != nil {
-		log.Fatalf("error dialing tcp: %v\n ", err)
-	}
-
-	_, err = conn.Write([]byte("HEAD / HTTP/1.0\r\n\r\n"))
-
-	result, err := ioutil.ReadAll(conn)
-
-	fmt.Println(string(result))
-
-	if err != nil {
-		log.Fatalf("error reading resonse: %v\n ", err)
-	}
-
 }
