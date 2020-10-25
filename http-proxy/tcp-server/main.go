@@ -21,9 +21,11 @@ func main() {
 		assertNil(err, "")
 		fmt.Println("receiving a request...")
 
-		var buf []byte
+		buf := make([]byte, 1024)
 		_, err = conn.Read(buf)
 		assertNil(err, "")
+
+		fmt.Println("received message: ", string(buf))
 
 		_, err = conn.Write(buf)
 		assertNil(err, "")
