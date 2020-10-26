@@ -43,11 +43,11 @@ class HttpRequestTest(BaseTest):
         with urllib.request.urlopen(http_addr, timeout=5) as f:
             response = json.loads(f.read().decode('utf-8'))
             # for this test, ignore connection header
-            del response['Connection']
+            # del response['Connection']
             self.assertDictEqual(response, {
                 'Accept-Encoding': 'identity',
                 'Host': 'localhost:8000',
-                'User-Agent': 'Python-urllib/3.6'
+                'User-Agent': 'Python-urllib/3.7'
             })
 
 
@@ -63,7 +63,7 @@ class KeepAliveTest(BaseTest):
             self.assertDictEqual(response, {
                 'Accept-Encoding': 'identity',
                 'Host': 'localhost:8000',
-                'User-Agent': 'Python-urllib/3.6',
+                'User-Agent': 'Python-urllib/3.7',
                 'Connection': 'Keep-Alive'
             })
 
