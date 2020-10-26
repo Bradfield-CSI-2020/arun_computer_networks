@@ -6,13 +6,20 @@ import (
 )
 
 type Request struct {
-	Status  []byte
+	Status  Status
 	Headers [][]byte
 	Payload []byte
 }
 
+type Status struct {
+	data    []byte
+	Method  string
+	Path    string
+	Version string
+}
+
 func (req *Request) ToBinary() []byte {
-	raw := req.Status
+	raw := req.Status.data
 
 	for _, v := range req.Headers {
 		raw = append(raw, []byte("\r\n")...)
@@ -41,15 +48,27 @@ func (req *Request) ReadRequest(raw []byte) {
 	nonPayloadPart := bytes.Split(parts[0], []byte("\r\n"))
 
 	req.Payload = parts[1]
-	req.Status = nonPayloadPart[0]
+	req.setStatus(nonPayloadPart[0])
 	req.Headers = nonPayloadPart[1:]
 }
 
+func (req *Request) setStatus(raw []byte) {
+	statusString := bytes.Split(raw, []byte(" "))
+	req.Status.data = raw
+	req.Status.Method = string(statusString[0])
+	req.Status.Path = string(statusString[1])
+	req.Status.Version = string(statusString[2])
+}
+
 func (req *Request) Print() {
-	fmt.Println("----")
-	fmt.Printf("Request status	: %s\n", req.Status)
-	fmt.Printf("Request headers	: %s\n", req.Headers)
-	fmt.Printf("Request payload	: %s\n", req.Payload)
-	fmt.Printf("Payload length	: %d\n", len(req.Payload))
+
+	fmt.Println("----Status----")
+	fmt.Printf("Method    : %s\n", req.Status.Method)
+	fmt.Printf("Path      : %s\n", req.Status.Path)
+	fmt.Printf("Version   : %s\n", req.Status.Version)
+
+	fmt.Printf("Request headers   : %s\n", req.Headers)
+	fmt.Printf("Request payload   : %s\n", req.Payload)
+	fmt.Printf("Payload length    : %d\n", len(req.Payload))
 	fmt.Println("----")
 }

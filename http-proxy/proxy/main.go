@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"http_proxy/cache"
 	"http_proxy/request"
 	"io/ioutil"
 	"log"
@@ -9,6 +10,9 @@ import (
 )
 
 func main() {
+
+	//setup cache
+	proxyCache := cache.InitCache()
 
 	// setup proxy server
 	proxyServerAddr, err := net.ResolveTCPAddr("tcp", "localhost:3001")
@@ -27,13 +31,10 @@ func main() {
 		n, err := proxyConn.Read(buf)
 		assertNil(err, "")
 
-		var request request.Request
-		// todo: covert to binary and check if size is the same as the original request
-		request.ReadRequest(buf[0:n])
-		check := request.ToBinary()
-		fmt.Println("original size: ", len(buf[0:n]))
-		fmt.Println("check size: ", len(check))
-		request.Print()
+		var incomingRequest request.Request
+		incomingRequest.ReadRequest(buf[0:n])
+
+		cachedValue := proxyCache.Get(incomingRequest.Status.Path)
 
 		targetServerAddr, err := net.ResolveTCPAddr("tcp", "localhost:9000")
 		assertNil(err, "")
@@ -41,18 +42,28 @@ func main() {
 		serverConn, err := net.DialTCP("tcp", nil, targetServerAddr)
 		assertNil(err, "")
 
-		var proxyRequest = request.GenerateProxyRequest()
-		binary := proxyRequest.ToBinary()
-		_, err = serverConn.Write(binary)
-		assertNil(err, "")
+		if cachedValue != nil {
+			fmt.Println("returning value from cache")
+			_, err = proxyConn.Write(cachedValue)
+		} else {
+			check := incomingRequest.ToBinary()
+			fmt.Println("original size: ", len(buf[0:n]))
+			fmt.Println("check size: ", len(check))
+			incomingRequest.Print()
 
-		result, err := ioutil.ReadAll(serverConn)
-		assertNil(err, "")
+			var proxyRequest = incomingRequest.GenerateProxyRequest()
+			binary := proxyRequest.ToBinary()
+			_, err = serverConn.Write(binary)
+			assertNil(err, "")
 
-		fmt.Printf("received message from target: %s\n", result)
+			result, err := ioutil.ReadAll(serverConn)
+			assertNil(err, "")
 
-		_, err = proxyConn.Write(result)
-		assertNil(err, "")
+			proxyCache.Set(incomingRequest.Status.Path, result)
+
+			_, err = proxyConn.Write(result)
+			assertNil(err, "")
+		}
 
 		err = serverConn.Close()
 		assertNil(err, "")
