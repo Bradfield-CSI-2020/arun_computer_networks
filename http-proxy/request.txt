@@ -1,6 +1,7 @@
 GET / HTTP/1.1
-Host: www.arun.com
+Host: server.py
 Connection: close
-User-Agent: arun
-X-Arun-Special: yaya
+User-Agent: netcat
+Accept-Language: en
+
 
