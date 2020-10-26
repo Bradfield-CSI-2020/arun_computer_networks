@@ -35,7 +35,7 @@ class BaseTest(unittest.TestCase):
 
 class HttpRequestTest(BaseTest):
     """
-    Test that we can send an HTTP request, and receive a response
+    Test that we can send an HTTP internal, and receive a response
     from the final server (via the proxy)
     """
     def test_open_url(self):
@@ -53,7 +53,7 @@ class HttpRequestTest(BaseTest):
 
 class KeepAliveTest(BaseTest):
     """
-    Test that we can send an HTTP request, and that the proxy
+    Test that we can send an HTTP internal, and that the proxy
     sends a `Connection: Keep-Alive` header
     """
     def test_open_url(self):

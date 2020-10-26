@@ -1,4 +1,4 @@
-package request
+package internal
 
 import (
 	"bytes"
@@ -15,10 +15,11 @@ const (
 	ProxyAuthenticate  = "Proxy-Authenticate:"
 )
 
-func FilterHopHopHeaders(raw [][]byte) [][]byte {
+func FilterHopHopHeaders(raw [][]byte) ([][]byte, [][]byte)  {
 
 	HopHopHeaders := [][]byte{[]byte(Connection), []byte(KeepAlive), []byte(TransferEncoding), []byte(TE), []byte(Trailer), []byte(Upgrade), []byte(ProxyAuthorization), []byte(ProxyAuthenticate)}
-	var filteredHeaders [][]byte
+	var carryForwardHeaders [][]byte
+	var hopHeaders [][]byte
 
 	for _, headerBytes := range raw {
 		toFilter := false
@@ -26,14 +27,15 @@ func FilterHopHopHeaders(raw [][]byte) [][]byte {
 		for _, hopHeader := range HopHopHeaders {
 			if bytes.HasPrefix(headerBytes, hopHeader) {
 				toFilter = true
+				hopHeaders  =  append(hopHeaders, hopHeader)
 				continue
 			}
 		}
 
 		if !toFilter {
-			filteredHeaders = append(filteredHeaders, headerBytes)
+			carryForwardHeaders = append(carryForwardHeaders, headerBytes)
 		}
 	}
 
-	return filteredHeaders
+	return carryForwardHeaders, hopHeaders
 }

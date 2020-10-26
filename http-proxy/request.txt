@@ -1,7 +1,6 @@
-GET / HTTP/1.1
+GET /test/1 HTTP/1.1
 Host: server.py
 Connection: close
 User-Agent: netcat
 Accept-Language: en
-
 

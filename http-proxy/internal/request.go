@@ -1,4 +1,4 @@
-package request
+package internal
 
 import (
 	"bytes"
@@ -35,7 +35,7 @@ func (req *Request) ToBinary() []byte {
 func (req *Request) GenerateProxyRequest() Request {
 	var proxyRequest Request
 
-	proxyHeaders := FilterHopHopHeaders(req.Headers)
+	proxyHeaders, _ := FilterHopHopHeaders(req.Headers)
 	proxyRequest.Headers = proxyHeaders
 	proxyRequest.Status = req.Status
 	proxyRequest.Payload = req.Payload
@@ -45,11 +45,11 @@ func (req *Request) GenerateProxyRequest() Request {
 
 func (req *Request) ReadRequest(raw []byte) {
 	parts := bytes.Split(raw, []byte("\r\n\r\n"))
-	nonPayloadPart := bytes.Split(parts[0], []byte("\r\n"))
+	nonPayloadParts := bytes.Split(parts[0], []byte("\r\n"))
 
 	req.Payload = parts[1]
-	req.setStatus(nonPayloadPart[0])
-	req.Headers = nonPayloadPart[1:]
+	req.setStatus(nonPayloadParts[0])
+	req.Headers = nonPayloadParts[1:]
 }
 
 func (req *Request) setStatus(raw []byte) {

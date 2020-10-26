@@ -108,7 +108,7 @@ func (query *DnsQuery) GenerateBinaryPayload() []byte {
 		(byte(1) << 1) | // set RD as required 	0000 0010
 		byte(0) // set RA to zero
 
-	flags[1] = byte(0) // Z is all zero , RCODE is all zero for a request
+	flags[1] = byte(0) // Z is all zero , RCODE is all zero for a internal
 
 	qCount := make([]byte, 2) // number of questions -> just one for us
 
