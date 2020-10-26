@@ -10,14 +10,14 @@ import (
 
 func main() {
 
-	// setup server
+	// setup proxy server
 	proxyServerAddr, err := net.ResolveTCPAddr("tcp", "localhost:3001")
 	assertNil(err, "")
 
 	proxyListener, err := net.ListenTCP("tcp", proxyServerAddr)
 	assertNil(err, "")
 
-	fmt.Println("starting tcp  ...")
+	fmt.Println("starting proxy server...")
 
 	for {
 		proxyConn, err := proxyListener.Accept()
@@ -27,14 +27,13 @@ func main() {
 		n, err := proxyConn.Read(buf)
 		assertNil(err, "")
 
-		var request internal.Request
+		var request request.Request
+		// todo: covert to binary and check if size is the same as the original request
 		request.ReadRequest(buf[0:n])
-
+		check := request.ToBinary()
+		fmt.Println("original size: ", len(buf[0:n]))
+		fmt.Println("check size: ", len(check))
 		request.Print()
-
-		var proxyRequest = request.GenerateProxyRequest()
-
-		binary := proxyRequest.ToBinary()
 
 		targetServerAddr, err := net.ResolveTCPAddr("tcp", "localhost:9000")
 		assertNil(err, "")
@@ -42,6 +41,8 @@ func main() {
 		serverConn, err := net.DialTCP("tcp", nil, targetServerAddr)
 		assertNil(err, "")
 
+		var proxyRequest = request.GenerateProxyRequest()
+		binary := proxyRequest.ToBinary()
 		_, err = serverConn.Write(binary)
 		assertNil(err, "")
 
