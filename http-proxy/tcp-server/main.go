@@ -43,6 +43,8 @@ func main() {
 		fmt.Println("received message from target: ", string(result))
 		assertNil(err, "")
 
+		_, err =  proxyConn.Write(result)
+
 		assertNil(err, "")
 		err = serverConn.Close()
 		err = proxyConn.Close()
