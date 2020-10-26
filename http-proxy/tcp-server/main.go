@@ -2,36 +2,52 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 )
 
 func main() {
 
-	service := ":3001"
-	tcpAddrPointer, err := net.ResolveTCPAddr("tcp", service)
+	// setup server
+	proxyServerAddr, err := net.ResolveTCPAddr("tcp", "localhost:3001")
 	assertNil(err, "")
-	listener, err := net.ListenTCP("tcp", tcpAddrPointer)
+
+	proxyListener, err := net.ListenTCP("tcp", proxyServerAddr)
 	assertNil(err, "")
 
 	fmt.Println("starting tcp server...")
 
 	for {
-		conn, err := listener.Accept()
-		assertNil(err, "")
-		fmt.Println("receiving a request...")
-
-		buf := make([]byte, 1024)
-		_, err = conn.Read(buf)
+		proxyConn, err := proxyListener.Accept()
 		assertNil(err, "")
 
-		fmt.Println("received message: ", string(buf))
-
-		_, err = conn.Write(buf)
+		buf := make([]byte, 2048)
+		_, err = proxyConn.Read(buf)
 		assertNil(err, "")
 
-		err = conn.Close()
+		fmt.Println("received message: \n", string(buf))
+
+		targetServerAddr, err := net.ResolveTCPAddr("tcp", "localhost:9000")
 		assertNil(err, "")
+
+		serverConn, err := net.DialTCP("tcp", nil, targetServerAddr)
+		assertNil(err, "")
+
+		_, err = serverConn.Write(buf)
+
+		//_, err = serverConn.Write([]byte("GET / HTTP/1.0\r\n\r\n"))
+		//_, err = serverConn.Write([]byte("GET / HTTP/1.0\r\nHost: www.arun.com\r\nConnection: close\r\nUser-Agent: arun\r\n\r\n"))
+		result, err := ioutil.ReadAll(serverConn)
+
+		fmt.Println("received message from target: ", string(result))
+		assertNil(err, "")
+
+		assertNil(err, "")
+		err = serverConn.Close()
+		err = proxyConn.Close()
+		assertNil(err, "")
+
 	}
 }
 
