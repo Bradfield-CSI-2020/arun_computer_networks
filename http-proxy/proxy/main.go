@@ -49,14 +49,16 @@ func main() {
 			resp.Print()
 			_, err = proxyConn.Write(cachedValue)
 		} else {
-			check := incomingRequest.ToBinary()
-			fmt.Println("original size: ", len(buf[0:n]))
-			fmt.Println("check size: ", len(check))
+			//check := incomingRequest.ToBinary()
+			//fmt.Println("original size: ", len(buf[0:n]))
+			//fmt.Println("check size: ", len(check))
 			incomingRequest.Print()
 
 			var proxyRequest = incomingRequest.GenerateProxyRequest()
 			binary := proxyRequest.ToBinary()
 			_, err = serverConn.Write(binary)
+			assertNil(err, "")
+
 			assertNil(err, "")
 
 			result, err := ioutil.ReadAll(serverConn)
@@ -66,9 +68,13 @@ func main() {
 			resp.ReadResponse(result)
 			resp.Print()
 
+			_, err = serverConn.Write(binary)
+			result2, err := ioutil.ReadAll(serverConn)
+
 			proxyCache.Set(incomingRequest.Status.Path, result)
 
 			_, err = proxyConn.Write(result)
+			_, err = proxyConn.Write(result2)
 			assertNil(err, "")
 		}
 
