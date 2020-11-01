@@ -35,7 +35,7 @@ class BaseTest(unittest.TestCase):
 
 class HttpRequestTest(BaseTest):
     """
-    Test that we can send an HTTP request, and receive a response
+    Test that we can send an HTTP internal, and receive a response
     from the final server (via the proxy)
     """
     def test_open_url(self):
@@ -43,17 +43,17 @@ class HttpRequestTest(BaseTest):
         with urllib.request.urlopen(http_addr, timeout=5) as f:
             response = json.loads(f.read().decode('utf-8'))
             # for this test, ignore connection header
-            del response['Connection']
+            # del response['Connection']
             self.assertDictEqual(response, {
                 'Accept-Encoding': 'identity',
                 'Host': 'localhost:8000',
-                'User-Agent': 'Python-urllib/3.6'
+                'User-Agent': 'Python-urllib/3.7'
             })
 
 
 class KeepAliveTest(BaseTest):
     """
-    Test that we can send an HTTP request, and that the proxy
+    Test that we can send an HTTP internal, and that the proxy
     sends a `Connection: Keep-Alive` header
     """
     def test_open_url(self):
@@ -63,7 +63,7 @@ class KeepAliveTest(BaseTest):
             self.assertDictEqual(response, {
                 'Accept-Encoding': 'identity',
                 'Host': 'localhost:8000',
-                'User-Agent': 'Python-urllib/3.6',
+                'User-Agent': 'Python-urllib/3.7',
                 'Connection': 'Keep-Alive'
             })
 

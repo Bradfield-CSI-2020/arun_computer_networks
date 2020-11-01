@@ -34,7 +34,7 @@ func handleClient(conn *net.UDPConn) {
 
 	_, addr, err := conn.ReadFromUDP(buf[0:])
 
-	fmt.Println("received udp request...")
+	fmt.Println("received udp internal...")
 
 	if err != nil {
 		log.Fatalf("error reading from udp address: %v\n ", err)
